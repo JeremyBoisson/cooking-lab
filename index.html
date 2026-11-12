@@ -1,0 +1,1194 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Cooking Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one-screen lab console. Tab bar on top, each view is a grid that fits the viewport; detail opens in place, never pushes the page. */
+:root{
+  --bg:#E8EFEE; --panel:#F8FBFA; --panel2:#EFF5F4; --ink:#0F282C; --muted:#557074; --line:#C6D5D3;
+  --accent:#F2552C; --violet:#6A4BE0; --ok:#178F62; --warn:#C98F00; --bad:#CC2F3C;
+  --grid:rgba(15,40,44,.05);
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1A1C; --panel:#14262A; --panel2:#1A2F33; --ink:#E2EFED; --muted:#8CA6A8; --line:#29403F;
+  --accent:#FF6E4A; --violet:#9D88FF; --ok:#3CC48E; --warn:#E8B53A; --bad:#FF6370; --grid:rgba(226,239,237,.04); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1A1C; --panel:#14262A; --panel2:#1A2F33; --ink:#E2EFED; --muted:#8CA6A8; --line:#29403F;
+  --accent:#FF6E4A; --violet:#9D88FF; --ok:#3CC48E; --warn:#E8B53A; --bad:#FF6370; --grid:rgba(226,239,237,.04); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px;gap:12px;box-sizing:border-box}
+header{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:26px;margin:0;letter-spacing:-.02em}
+.brand h1 span{color:var(--accent)}
+.brand small{font-family:var(--f-mono);color:var(--muted);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+nav{display:flex;gap:4px;flex-wrap:wrap;margin-left:auto}
+nav button{font:500 13px var(--f-body);color:var(--muted);background:transparent;border:1px solid transparent;border-radius:999px;padding:6px 14px;cursor:pointer}
+nav button:hover{color:var(--ink);border-color:var(--line)}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+nav button.lab{border-color:var(--accent);color:var(--accent)}
+nav button.lab[aria-selected="true"]{background:var(--accent);color:#fff}
+button:focus-visible,input:focus-visible,summary:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+main{min-height:0;position:relative}
+.view{height:100%;min-height:0;display:grid;gap:12px}
+.view[hidden]{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0;min-height:0;overflow:auto}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.eyebrow b{color:var(--violet);font-weight:500}
+h2{font-family:var(--f-display);font-weight:700;font-size:20px;margin:0 0 8px;text-wrap:balance;letter-spacing:-.01em}
+h3{font-family:var(--f-display);font-weight:700;font-size:15px;margin:0}
+p{margin:0 0 8px;max-width:65ch}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+details{border-top:1px solid var(--line);padding:8px 0}
+details:first-of-type{border-top:0}
+summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;font-weight:600}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";font-family:var(--f-mono);color:var(--accent);width:12px}
+details[open] summary::before{content:"−"}
+details > div{padding:6px 0 0 20px;color:var(--muted)}
+details > div p{color:var(--ink)}
+ul.tight{margin:4px 0 0;padding-left:18px}
+ul.tight li{margin:2px 0}
+.chip{display:inline-flex;align-items:center;gap:4px;font:500 11px var(--f-mono);padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+
+/* VISION */
+#v-vision{grid-template-columns:1.25fr 1fr;grid-template-rows:auto 1fr}
+.hero{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
+.hero h2{font-size:clamp(28px,4vw,48px);line-height:1;margin:0 0 10px;font-weight:800;letter-spacing:-.03em}
+.hero h2 em{font-style:normal;color:var(--accent)}
+.facts{display:flex;gap:8px;flex-wrap:wrap}
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
+.pillar{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel2)}
+.pillar .k{font:500 11px var(--f-mono);color:var(--accent)}
+.pillar details{border:0;padding:4px 0 0}
+.pillar summary{font-weight:400;color:var(--muted);font-size:13px}
+.ticket{border:1.5px dashed var(--ink);border-radius:8px;padding:10px 14px;font-family:var(--f-mono);font-size:12px;width:220px;background:var(--panel)}
+.ticket .t{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:4px;margin-bottom:6px;font-weight:500}
+.ticket .r{display:flex;justify-content:space-between}
+
+/* LOOP */
+#v-loop{grid-template-columns:1.2fr 1fr;grid-template-rows:1fr auto}
+.loopsvg{width:100%;height:100%;max-height:100%;display:block}
+.node{cursor:pointer}
+.node rect{fill:var(--panel2);stroke:var(--line);stroke-width:1.5}
+.node.on rect{fill:var(--ink);stroke:var(--ink)}
+.node text{fill:var(--ink);font-family:var(--f-display);font-weight:700;font-size:15px}
+.node.on text{fill:var(--bg)}
+.node .n{font-family:var(--f-mono);font-size:10px;font-weight:400;fill:var(--muted)}
+.node.on .n{fill:var(--bg)}
+.arrow{stroke:var(--accent);stroke-width:2;fill:none}
+.progress{grid-column:1/-1}
+.track{display:flex;gap:6px;align-items:stretch;overflow-x:auto;padding-bottom:4px}
+.tier{flex:1;min-width:130px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel2);position:relative}
+.tier .lv{font:500 11px var(--f-mono);color:var(--violet)}
+.tier b{display:block;font-family:var(--f-display);font-size:14px}
+.tier span{font-size:12px;color:var(--muted)}
+
+/* AUDIENCE / TECH / LOOK */
+#v-market,#v-tech,#v-look{grid-template-columns:repeat(3,1fr)}
+.persona{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;margin-bottom:10px}
+.avatar{width:56px;height:56px;border-radius:50%;background:var(--violet);color:#fff;display:grid;place-items:center;font:700 22px var(--f-display)}
+.bar{display:grid;grid-template-columns:110px 1fr 36px;gap:8px;align-items:center;font-size:12px;margin:5px 0}
+.bar i{display:block;height:8px;border-radius:4px;background:var(--line);position:relative;overflow:hidden}
+.bar i::after{content:"";position:absolute;inset:0;width:var(--w);background:var(--accent);border-radius:4px}
+.pipe{display:flex;flex-direction:column;gap:6px}
+.pipe .st{border:1px solid var(--line);border-radius:8px;padding:6px 10px;background:var(--panel2);display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;cursor:pointer}
+.pipe .st.on{border-color:var(--violet);box-shadow:inset 3px 0 0 var(--violet)}
+.pipe .ar{text-align:center;color:var(--accent);font-family:var(--f-mono);line-height:1;font-size:12px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+td,th{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:6px 0 10px}
+.sw{height:44px;border-radius:6px;border:1px solid var(--line);display:flex;align-items:flex-end;padding:4px;font:500 10px var(--f-mono);color:#fff}
+.roster{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.roster div{text-align:center;font-size:12px}
+.roster svg{width:100%;height:auto;background:var(--panel2);border-radius:8px}
+.bench{width:100%;height:auto;background:var(--panel2);border-radius:8px}
+.bench .s{stroke:var(--ink);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.bench .liq{fill:var(--violet);opacity:.35}
+.bench .liq2{fill:var(--accent);opacity:.35}
+.bench text{fill:var(--ink);font-family:var(--f-mono);font-size:10px}
+
+/* RECIPE LAB */
+#v-lab{grid-template-columns:220px minmax(0,1fr) 330px}
+.rlist{display:flex;flex-direction:column;gap:4px;padding:10px}
+.rbtn{all:unset;box-sizing:border-box;display:grid;grid-template-columns:1fr auto;gap:2px 6px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.rbtn:hover{border-color:var(--line)}
+.rbtn[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.rbtn b{font-family:var(--f-display);font-size:14px}
+.rbtn span{font:11px var(--f-mono);opacity:.7;grid-column:1/-1}
+.rbtn em{font-style:normal;font:500 11px var(--f-mono);color:var(--accent)}
+.comp-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px}
+.ing{border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:var(--panel2)}
+.ing.off{opacity:.5}
+.ing-h{display:flex;align-items:center;gap:10px;padding:8px 10px;flex-wrap:wrap}
+.ing-h label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.ing-h input{accent-color:var(--accent);width:16px;height:16px}
+.ing-h .eff{margin-left:auto;display:flex;gap:6px;align-items:center}
+.steps{display:grid;gap:2px;padding:0 10px 8px}
+.step{display:grid;grid-template-columns:20px 120px minmax(80px,1fr) 44px 110px;gap:8px;align-items:center;font-size:12.5px}
+.step .no{font:11px var(--f-mono);color:var(--muted)}
+.step .vb{font-weight:500}
+.step .vb small{display:block;font:11px var(--f-mono);color:var(--muted)}
+.step input[type=range]{width:100%;accent-color:var(--violet)}
+.step .pct{font:500 12px var(--f-mono);text-align:right}
+.step .meas{font:11px var(--f-mono);color:var(--muted);text-align:right}
+.tier-p{color:var(--ok)}.tier-g{color:var(--violet)}.tier-u{color:var(--warn)}.tier-b{color:var(--bad)}
+.chip.tier-p{border-color:var(--ok)}.chip.tier-g{border-color:var(--violet)}.chip.tier-u{border-color:var(--warn)}.chip.tier-b{border-color:var(--bad)}
+.pantry{display:flex;gap:6px;flex-wrap:wrap}
+.pantry button{font:500 12px var(--f-body);border:1px dashed var(--line);background:transparent;color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+.pantry button[aria-pressed="true"]{border-style:solid;border-color:var(--accent);background:var(--accent);color:#fff}
+.presets{display:flex;gap:4px}
+.presets button{font:500 11px var(--f-mono);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:6px;padding:4px 8px;cursor:pointer}
+.presets button:hover{border-color:var(--ink)}
+.preview{display:flex;flex-direction:column;gap:8px}
+.stage{background:var(--panel2);border-radius:8px;border:1px solid var(--line);position:relative}
+.stage svg{display:block;width:100%;height:auto;max-height:42vh}
+.score{display:flex;align-items:baseline;gap:8px}
+.score .big{font:800 36px var(--f-display);line-height:1}
+.verdict{font-weight:600}
+.efflist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.efflist li{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start}
+.efflist .d{width:8px;height:8px;border-radius:50%;margin-top:5px;background:currentColor}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes flick{0%,100%{opacity:1}45%{opacity:.55}50%{opacity:1}}
+.bob{animation:bob 2.4s ease-in-out infinite}
+.flick{animation:flick 1.2s steps(2) infinite}
+@media (prefers-reduced-motion:reduce){.bob,.flick{animation:none}}
+
+/* KITCHEN 3D */
+#v-kitchen{grid-template-columns:minmax(0,1fr) 250px}
+.kstage{position:relative;padding:0;overflow:hidden}
+.kstage canvas#kcanvas{display:block;width:100%;height:100%;touch-action:none}
+.kstage.editing{box-shadow:inset 0 0 0 2px var(--accent)}
+.khint{position:absolute;left:12px;bottom:10px;font:11px var(--f-mono);color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 8px;pointer-events:none}
+.ktip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font:500 12px var(--f-body);padding:4px 8px;border-radius:6px;transform:translate(-50%,-130%);white-space:nowrap}
+.kbtn{font:500 12.5px var(--f-body);border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.kbtn:hover{border-color:var(--ink)}
+.kbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.kactions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 10px}
+.klist{display:flex;flex-direction:column;gap:3px}
+.kitem{all:unset;box-sizing:border-box;display:grid;grid-template-columns:10px 1fr auto;gap:8px;align-items:center;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:13px;border:1px solid transparent}
+.kitem:hover{border-color:var(--line)}
+.kitem.sel{border-color:var(--accent);background:var(--panel2)}
+.kitem .kd{width:10px;height:10px;border-radius:3px;border:1px solid var(--ink)}
+.kitem em{font:500 11px var(--f-mono);font-style:normal;color:var(--muted)}
+.kitem small{grid-column:2/-1;font:11px var(--f-mono);color:var(--muted);margin-top:-3px}
+.kmodal{position:absolute;inset:12px;background:var(--panel);border:1px solid var(--ink);border-radius:12px;padding:12px 14px;display:grid;grid-template-rows:auto 1fr;gap:8px;box-shadow:0 20px 50px rgba(0,0,0,.25);min-height:0}
+.km-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.km-head h2{margin:0}
+.km-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1.15fr) minmax(0,1fr);gap:10px;min-height:0}
+.km-cell{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel2);min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column}
+.km-iso{flex:1;min-height:120px;position:relative}
+.km-iso canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+.km-mock{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.km-mock svg{width:100%;height:100%;max-height:100%;border-radius:6px}
+.mk{font-family:var(--f-mono);font-size:8px;fill:var(--ink)}
+#kmLv{width:100%;accent-color:var(--accent);margin:2px 0 6px}
+.km-lvls{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+.km-lvls button{all:unset;box-sizing:border-box;cursor:pointer;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:11.5px;line-height:1.25;background:var(--panel)}
+.km-lvls button b{display:block;font:500 10px var(--f-mono);color:var(--muted)}
+.km-lvls button.on{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+.km-lvls button:focus-visible{outline:2px solid var(--violet)}
+.kstat{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px}
+.kstat dt{font:11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding-top:1px}
+.kstat dd{margin:0}
+@media (max-width:860px){
+  #v-kitchen{grid-template-columns:1fr}
+  .kstage{height:62vh}
+  .kmodal{position:fixed;inset:8px;z-index:20;overflow:auto}
+  .km-grid{grid-template-columns:1fr;grid-template-rows:none}
+  .km-iso{min-height:220px}
+}
+
+@media (max-width:1100px){
+  #v-lab{grid-template-columns:180px minmax(0,1fr) 280px}
+  .step{grid-template-columns:18px 100px minmax(60px,1fr) 40px}
+  .step .meas{display:none}
+}
+@media (max-width:860px){
+  .app{height:auto;min-height:100%}
+  html,body{height:auto}
+  .view,#v-vision,#v-loop,#v-market,#v-tech,#v-look,#v-lab{grid-template-columns:1fr;grid-template-rows:none;height:auto}
+  .hero{grid-template-columns:1fr}
+  .pillars{grid-template-columns:1fr}
+  .panel{overflow:visible}
+  .rlist{flex-direction:row;overflow-x:auto}
+  .rbtn{min-width:150px}
+  nav{margin-left:0}
+}
+</style>
+
+<div class="app">
+<header>
+  <div class="brand"><h1>Cooking <span>Lab</span></h1><small>Game vision · v0.1</small></div>
+  <nav role="tablist" id="tabs">
+    <button role="tab" data-v="vision" aria-selected="true">Vision</button>
+    <button role="tab" data-v="loop">Core loop</button>
+    <button role="tab" data-v="market">Audience</button>
+    <button role="tab" data-v="tech">Tech</button>
+    <button role="tab" data-v="look">Look &amp; feel</button>
+    <button role="tab" data-v="kitchen">Kitchen 3D</button>
+    <button role="tab" data-v="lab" class="lab">Recipe Lab ⚗</button>
+  </nav>
+</header>
+<main>
+
+<!-- VISION -->
+<section class="view" id="v-vision">
+  <div class="panel hero">
+    <div>
+      <p class="eyebrow">High concept · PC &amp; web browser</p>
+      <h2>Be the mad scientist of <em>futuristic cooking.</em></h2>
+      <p>Take orders, cook with lab-grade precision, and serve. Every gram, kelvin and second you get right or wrong shows up on the test subject who eats your dish: they glow, float, shrink or grow a giant head. Cooking Lab is closer to chemistry than to a kitchen, and it is always played for laughs.</p>
+      <div class="facts">
+        <span class="chip">Genre: precision cooking sim</span><span class="chip">Target: university students, 17–24</span><span class="chip">Session: 3–5 min per order</span><span class="chip">Tone: educational &amp; goofy</span>
+      </div>
+    </div>
+    <div class="ticket" aria-label="Example order ticket">
+      <div class="t"><span>ORDER #3</span><span>⏱ 04:00</span></div>
+      <div class="r"><span>Quantum Omelette</span><span>×1</span></div>
+      <div class="r muted"><span>Subject</span><span>Rat · Pip</span></div>
+      <div class="r muted"><span>Requested</span><span>Size ↑, glow</span></div>
+      <div class="r muted"><span>Plasma butter</span><span>12.0 g</span></div>
+      <div class="r muted"><span>Pan</span><span>310 K</span></div>
+    </div>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Design pillars</p>
+    <div class="pillars">
+      <div class="pillar"><div class="k">Precision</div><h3>Every step is measured</h3>
+        <details><summary>Weight, temperature, time, angle</summary><div><p>Each step has a real target in real units (g, mL, K, °C, rpm, pH, mm). Precision is scored 0–100% and drives the outcome.</p></div></details></div>
+      <div class="pillar"><div class="k">Mad science</div><h3>Futuristic tools &amp; elements</h3>
+        <details><summary>Cryo, plasma, quantum</summary><div><p>Familiar gestures with impossible equipment: plasma butter, cryo-chives, helium flour, a centrifuge whisk. New gear unlocks new kinds of effects.</p></div></details></div>
+      <div class="pillar"><div class="k">Consequences</div><h3>See the result on the subject</h3>
+        <details><summary>Dosage → effect strength</summary><div><p>Good dosing gives the requested effect. Sloppy dosing gives side effects. Bad dosing backfires: the subject turns green or shrinks. The payoff is visual and immediate.</p></div></details></div>
+      <div class="pillar"><div class="k">Immersion</div><h3>Realistic, step-by-step</h3>
+        <details><summary>Slice to cut, turn to stir</summary><div><p>First-person bench with two hands. Mouse gestures copy the real motion: drag to slice, circle to stir, hold to pour, scroll to set heat.</p></div></details></div>
+    </div>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Player promise &amp; ethics</p>
+    <details open><summary>What the player feels</summary><div><p>“I nailed 37.0 °C and the monkey's head doubled in size. Let's see what 40 does.” Curiosity first, then mastery.</p></div></details>
+    <details><summary>Learning by playing</summary><div><p>Units, conversions, Maillard reaction, emulsions, pH and phase changes are taught through the mechanics, not through text screens. A codex fills in with the real science behind each step.</p></div></details>
+    <details><summary>No harm to test subjects</summary><div><p>Subjects are volunteers on the lab's payroll. Effects are temporary, harmless and silly. Every subject leaves the bench happy, and a backfire costs you reputation, not the subject.</p></div></details>
+    <details><summary>Progress &amp; equipment</summary><div><p>Serving earns lab credits and reputation. Credits buy stations (centrifuge, cryo chamber, plasma torch). Each station opens new recipes and new effects. See the Core loop tab.</p></div></details>
+  </div>
+</section>
+
+<!-- LOOP -->
+<section class="view" id="v-loop" hidden>
+  <div class="panel" style="display:flex;flex-direction:column">
+    <p class="eyebrow">Core loop · <b>click a stage</b></p>
+    <div style="flex:1;min-height:0">
+    <svg class="loopsvg" viewBox="0 0 520 360" id="loopsvg" role="img" aria-label="Core loop diagram: Order, Stations and tools, Controls, Outcome, Serve">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--accent)"/></marker></defs>
+      <path class="arrow" marker-end="url(#ah)" d="M150 70 Q260 20 330 60"/>
+      <path class="arrow" marker-end="url(#ah)" d="M440 100 Q480 170 440 230"/>
+      <path class="arrow" marker-end="url(#ah)" d="M350 290 Q300 320 250 300"/>
+      <path class="arrow" marker-end="url(#ah)" d="M130 290 Q70 270 70 220"/>
+      <path class="arrow" marker-end="url(#ah)" d="M60 150 Q50 120 60 100"/>
+      <text x="260" y="190" text-anchor="middle" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">one order ≈ 3–5 min</text>
+      <text x="260" y="172" text-anchor="middle" font-family="var(--f-display)" font-weight="800" font-size="22" fill="var(--ink)">Cook. Dose. Observe.</text>
+    </svg>
+    </div>
+  </div>
+  <div class="panel" id="loopdetail" aria-live="polite"></div>
+  <div class="panel progress">
+    <p class="eyebrow">Progression · <b>credits unlock stations, stations unlock effects</b></p>
+    <div class="track">
+      <div class="tier"><div class="lv">LV 1</div><b>Starter bench</b><span>Pan, cutting board, oven · size &amp; color</span></div>
+      <div class="tier"><div class="lv">LV 2</div><b>Precision scale</b><span>0.01 g dosing · spots</span></div>
+      <div class="tier"><div class="lv">LV 3</div><b>Centrifuge whisk</b><span>3,000 rpm emulsions · head size</span></div>
+      <div class="tier"><div class="lv">LV 4</div><b>Cryo chamber</b><span>−196 °C flash-freeze · glow</span></div>
+      <div class="tier"><div class="lv">LV 5</div><b>Plasma torch</b><span>1,200 K searing · levitation</span></div>
+      <div class="tier"><div class="lv">LV 6</div><b>Mitosis oven</b><span>Cell division · clones</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKET -->
+<section class="view" id="v-market" hidden>
+  <div class="panel">
+    <p class="eyebrow">For <b>Head of Marketing</b> · who it's for</p>
+    <div class="persona"><div class="avatar">L</div><div><h3>Léa, 20, biochem undergrad</h3><span class="muted">Plays on her laptop between lectures. Watches science TikTok and lab-fail compilations. Wants to feel smart and laugh.</span></div></div>
+    <div class="bar"><span>Science interest</span><i style="--w:90%"></i><span class="mono">90</span></div>
+    <div class="bar"><span>Humor appetite</span><i style="--w:85%"></i><span class="mono">85</span></div>
+    <div class="bar"><span>Session time</span><i style="--w:40%"></i><span class="mono">short</span></div>
+    <div class="bar"><span>Hardware</span><i style="--w:35%"></i><span class="mono">laptop</span></div>
+    <details><summary>Secondary audiences</summary><div><ul class="tight"><li>High-school seniors heading into STEM</li><li>Teachers using it as a lab-safety and measurement warm-up</li><li>Cooking-sim fans who want a sharper skill ceiling</li></ul></div></details>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Positioning</p>
+    <h2>The cooking game where your mistakes are the content.</h2>
+    <details open><summary>Hook 1 · Shareable transformations</summary><div><p>Every served dish ends on a 3-second reaction shot (big head, glowing pig, floating monkey). One-click clip export for social.</p></div></details>
+    <details><summary>Hook 2 · Real science, real units</summary><div><p>Grams, kelvin, pH and rpm are the game's language. Players learn conversions and reactions without a single quiz.</p></div></details>
+    <details><summary>Hook 3 · Instant play in the browser</summary><div><p>No install. A link in a group chat or a class Discord gets someone cooking in under 30 seconds.</p></div></details>
+    <details><summary>Ethics as a selling point</summary><div><p>Subjects are happy volunteers and every effect wears off. Lab humor without cruelty keeps it safe for schools and streamers.</p></div></details>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Go-to-market</p>
+    <table>
+      <tr><th>Channel</th><th>Tactic</th></tr>
+      <tr><td>Short video</td><td>Daily “Dish of the day” reaction clips</td></tr>
+      <tr><td>Campus</td><td>Science-club challenge weeks, leaderboard per university</td></tr>
+      <tr><td>Streaming</td><td>Chat votes the dosage for the streamer</td></tr>
+      <tr><td>Education</td><td>Free classroom mode with a teacher codex</td></tr>
+    </table>
+    <details><summary>Success metrics</summary><div><ul class="tight"><li>Browser demo → wishlist conversion</li><li>Clips shared per 100 sessions</li><li>D7 retention of students</li></ul></div></details>
+  </div>
+</section>
+
+<!-- TECH -->
+<section class="view" id="v-tech" hidden>
+  <div class="panel">
+    <p class="eyebrow">For <b>Lead Engineer</b> · runtime pipeline · <b>click a stage</b></p>
+    <div class="pipe" id="pipe"></div>
+  </div>
+  <div class="panel" id="pipedetail" aria-live="polite"></div>
+  <div class="panel">
+    <p class="eyebrow">Input mapping · mouse &amp; keyboard</p>
+    <table>
+      <tr><th>Action</th><th>Gesture</th><th>Scored on</th></tr>
+      <tr><td>Slice</td><td>Drag across the board</td><td>Thickness, angle</td></tr>
+      <tr><td>Stir / whisk</td><td>Circle the cursor</td><td>rpm, duration</td></tr>
+      <tr><td>Pour</td><td>Hold + mouse wheel tilt</td><td>Volume, flow</td></tr>
+      <tr><td>Weigh</td><td>Click to drip-add</td><td>Grams vs target</td></tr>
+      <tr><td>Heat</td><td>Scroll the dial</td><td>Temp × time</td></tr>
+      <tr><td>Plate</td><td>Drag &amp; drop components</td><td>Layout, order</td></tr>
+    </table>
+    <details><summary>Targets &amp; risks</summary><div><ul class="tight"><li>PC build + WebGL build from one codebase</li><li>Browser memory budget: subject rigs use blendshapes, not unique meshes</li><li>Input latency must stay under 50 ms for slicing to feel fair</li><li>All recipes are data-driven (JSON) so designers can tune without code</li></ul></div></details>
+  </div>
+</section>
+
+<!-- LOOK -->
+<section class="view" id="v-look" hidden>
+  <div class="panel">
+    <p class="eyebrow">For <b>Creative Director</b> · first-person bench</p>
+    <svg class="bench" viewBox="0 0 320 220" role="img" aria-label="First-person mockup: steel bench in perspective, gloved hands slicing on a cutting board, flask on a heater, beaker on a precision scale, order ticket top-right and a measurement HUD">
+      <defs>
+        <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--line)"/><stop offset="1" stop-color="var(--panel)"/></linearGradient>
+        <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--panel2)"/><stop offset="1" stop-color="var(--bg)"/></linearGradient>
+      </defs>
+      <!-- back wall with tile grid -->
+      <rect x="0" y="0" width="320" height="104" fill="url(#wall)"/>
+      <path d="M0 26H320M0 52H320M0 78H320M40 0V104M80 0V104M120 0V104M160 0V104M200 0V104M240 0V104M280 0V104" stroke="var(--line)" stroke-width=".6" opacity=".7"/>
+      <!-- bench top in perspective -->
+      <path d="M40 104 L280 104 L320 190 L0 190Z" fill="url(#steel)" stroke="var(--ink)" stroke-width="1.5"/>
+      <path d="M0 190 L320 190 L320 220 L0 220Z" fill="var(--line)"/>
+      <path d="M100 104 L70 190 M160 104 L160 190 M220 104 L250 190" stroke="var(--ink)" stroke-width=".4" opacity=".25"/>
+      <!-- side stations sliding in (cut off by frame) -->
+      <g opacity=".9"><rect x="-14" y="62" width="40" height="64" rx="5" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/><circle cx="12" cy="80" r="7" class="s"/><rect x="0" y="96" width="22" height="16" rx="2" class="s"/><text x="2" y="58" style="font-size:7px">CRYO ◂</text></g>
+      <g opacity=".9"><rect x="294" y="62" width="40" height="64" rx="5" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/><path d="M302 72h20M302 82h20M302 92h20" class="s"/><text x="284" y="58" style="font-size:7px">▸ OVEN</text></g>
+      <!-- flask on heater with coil + steam -->
+      <rect x="138" y="96" width="44" height="12" rx="3" fill="var(--ink)"/><circle cx="148" cy="102" r="2" fill="var(--accent)"/>
+      <circle cx="160" cy="76" r="22" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.8"/>
+      <path d="M140 82 A22 22 0 0 0 180 82 Q170 76 160 82 Q150 88 140 82Z" class="liq2"/>
+      <path d="M154 55 V30 M166 55 V30" class="s"/>
+      <path d="M160 30 c-12 -3 12 -6 0 -9 c-12 -3 12 -6 0 -9 c-12 -3 12 -6 0 -9" class="s" stroke="var(--violet)"/>
+      <path d="M150 20 q-6 -8 0 -16 M172 22 q6 -8 0 -16" class="s" opacity=".4"/>
+      <!-- beaker on precision scale -->
+      <rect x="62" y="114" width="58" height="10" rx="2" fill="var(--ink)"/>
+      <rect x="70" y="126" width="42" height="9" rx="2" fill="var(--panel)" stroke="var(--ink)"/><text x="73" y="133" style="font-size:7px">11.8 g</text>
+      <path d="M74 82 V112 H108 V82" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.8"/>
+      <rect x="75" y="96" width="32" height="16" class="liq"/>
+      <path d="M100 88h6M102 94h4M100 100h6M102 106h4" stroke="var(--ink)" stroke-width=".8"/>
+      <!-- cutting board with ingredient -->
+      <path d="M118 140 L222 140 L234 176 L106 176Z" fill="hsl(30 45% 62%)" stroke="var(--ink)" stroke-width="1.5"/>
+      <ellipse cx="178" cy="158" rx="28" ry="10" fill="hsl(130 45% 48%)" stroke="var(--ink)" stroke-width="1.2"/>
+      <path d="M160 152 v12 M168 150 v15 M176 149 v17" stroke="var(--ink)" stroke-width="1" opacity=".6"/>
+      <path d="M190 150 L196 166" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/>
+      <!-- plating dish right -->
+      <ellipse cx="262" cy="134" rx="30" ry="9" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/>
+      <ellipse cx="262" cy="132" rx="18" ry="5" fill="none" stroke="var(--line)"/>
+      <!-- left glove holding ingredient -->
+      <path d="M118 220 L128 182 q2 -8 8 -8 l14 2 q6 1 4 7 l-4 8 q8 -4 10 2 l-6 10 L148 220Z" fill="var(--violet)" stroke="var(--ink)" stroke-width="1.5" opacity=".92"/>
+      <!-- right glove holding knife -->
+      <path d="M196 164 L232 124" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+      <path d="M196 164 L188 174" stroke="hsl(200 10% 80%)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M262 220 L246 176 q-3 -10 -12 -8 l-10 4 q-5 3 -1 8 l6 6 q-10 0 -8 8 L232 220Z" fill="var(--violet)" stroke="var(--ink)" stroke-width="1.5" opacity=".92"/>
+      <!-- order ticket pinned top-right -->
+      <g transform="rotate(3 280 26)"><rect x="244" y="6" width="70" height="44" rx="3" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/><circle cx="279" cy="8" r="3" fill="var(--accent)"/>
+      <text x="250" y="22" style="font-weight:500">ORDER #3</text><text x="250" y="33" style="font-size:8px">Quantum Omelette</text><text x="250" y="44" style="font-size:8px" fill="var(--accent)">⏱ 02:41</text></g>
+      <!-- HUD -->
+      <rect x="8" y="196" width="172" height="18" rx="4" fill="var(--ink)" opacity=".9"/>
+      <text x="14" y="208" fill="var(--bg)" style="font-size:8.5px;fill:var(--bg)">CUT · 3.1 / 3.0 mm · 310 K · 96%</text>
+      <rect x="8" y="190" width="172" height="3" rx="1.5" fill="var(--line)"/><rect x="8" y="190" width="165" height="3" rx="1.5" fill="var(--ok)"/>
+    </svg>
+    <details open><summary>Camera &amp; framing</summary><div><p>Fixed first-person view over a steel bench, two gloved hands in frame. The order ticket pins to the top-right corner. Stations slide in from the sides.</p></div></details>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Palette &amp; tone</p>
+    <div class="swatches">
+      <div class="sw" style="background:#E8EFEE;color:#0F282C">Tile</div>
+      <div class="sw" style="background:#0F282C">Steel ink</div>
+      <div class="sw" style="background:#F2552C">Reaction</div>
+      <div class="sw" style="background:#6A4BE0">Reagent</div>
+      <div class="sw" style="background:#178F62">Pass</div>
+    </div>
+    <details open><summary>Three words</summary><div><p>Clean glass, goofy subjects, hot reactions. The lab is tidy and clinical; the chaos comes from the food and the subjects.</p></div></details>
+    <details><summary>Feedback language</summary><div><p>Liquids glow in reagent violet. Heat and success flashes use reaction orange. Measurement readouts always use a mono font, like lab equipment.</p></div></details>
+    <details><summary>Audio</summary><div><p>Glass clinks, Geiger-style ticks while dosing, a squeaky “boing” when an effect lands.</p></div></details>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">Test subjects roster</p>
+    <div class="roster" id="roster"></div>
+    <details open><summary>Effect vocabulary</summary><div><ul class="tight"><li>Size: grow / shrink</li><li>Head: inflate / pinhead</li><li>Color: hue shift, sickly green on backfire</li><li>Glow, levitation, polka spots, big ears, clones</li></ul></div></details>
+    <details><summary>Rules for subjects</summary><div><p>Big readable silhouettes, expressive faces, never in pain. A backfire reads as dizzy or embarrassed, not hurt.</p></div></details>
+  </div>
+</section>
+
+<!-- KITCHEN 3D -->
+<section class="view" id="v-kitchen" hidden>
+  <div class="panel kstage" id="kstage">
+    <canvas id="kcanvas" aria-label="3D lab kitchen. Use the station list to open a station."></canvas>
+    <div class="ktip" id="ktip" hidden></div>
+    <div class="khint" id="khint">Drag to orbit · right-drag to pan · scroll to zoom · click a station</div>
+    <div class="kmodal" id="kmodal" hidden role="dialog" aria-modal="true" aria-labelledby="kmTitle">
+      <div class="km-head">
+        <div><p class="eyebrow" id="kmEyebrow"></p><h2 id="kmTitle"></h2></div>
+        <button class="kbtn" id="kmClose">Close ✕</button>
+      </div>
+      <div class="km-grid">
+        <div class="km-cell"><p class="eyebrow">Isolated view · <b>drag to rotate</b></p><div class="km-iso" id="kmIso"><canvas id="isoCanvas"></canvas></div></div>
+        <div class="km-cell"><p class="eyebrow">In-game view</p><div class="km-mock" id="kmMock"></div></div>
+        <div class="km-cell" id="kmDesc"></div>
+        <div class="km-cell">
+          <p class="eyebrow">Progression · <b>drag to preview upgrades</b></p>
+          <input type="range" min="1" max="4" step="1" value="1" id="kmLv" aria-label="Upgrade level">
+          <div class="km-lvls" id="kmLvls"></div>
+          <div id="kmStat"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <aside class="panel kside">
+    <p class="eyebrow">Lab kitchen layout</p>
+    <h2 style="margin-bottom:4px">Stations &amp; tools</h2>
+    <p class="muted" id="kmode" style="font-size:12.5px">Click a station in 3D or in the list to inspect it.</p>
+    <div class="kactions">
+      <button class="kbtn" id="kEdit" aria-pressed="false">✎ Edit layout</button>
+      <button class="kbtn" id="kRot" hidden>⟳ Rotate 90°</button>
+      <button class="kbtn" id="kReset">Reset layout</button>
+    </div>
+    <div class="klist" id="klist"></div>
+  </aside>
+</section>
+
+<!-- LAB -->
+<section class="view" id="v-lab" hidden>
+  <div class="panel" style="padding:0"><div class="rlist" id="rlist" role="tablist" aria-label="Recipes"></div></div>
+  <div class="panel" id="comp"></div>
+  <div class="panel preview" id="preview" aria-live="polite"></div>
+</section>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ---------- Subject renderer ----------
+const SPECIES={
+  rat:{name:"Lab rat",hue:215,sat:10,l:74},
+  pig:{name:"Pig",hue:345,sat:65,l:80},
+  monkey:{name:"Monkey",hue:28,sat:42,l:48},
+  plant:{name:"Plant",hue:125,sat:45,l:42}
+};
+function creature(sp,p={}){
+  const S=SPECIES[sp];
+  const bs=p.bs??1, hs=p.hs??1, es=p.es??1, mood=p.mood??0.6;
+  const hue=(S.hue+(p.hue||0)+360)%360;
+  const sat=p.sick?55:Math.min(90,S.sat+(p.hue?45:0));
+  const light=p.sick?55:S.l;
+  const fill=`hsl(${hue} ${sat}% ${light}%)`, dark=`hsl(${hue} ${sat}% ${light-22}%)`, pale=`hsl(${hue} ${sat}% ${Math.min(92,light+14)}%)`;
+  const ink="var(--ink)";
+  const fl=p.float||0;
+  let g="";
+  const by=230, bry=50*bs, brx=56*bs;
+  const hr=44*hs, hy=by-bry-hr+18;
+  if(sp==="plant"){
+    g+=`<path d="M112 300 L188 300 L196 252 L104 252Z" fill="var(--accent)" stroke="${ink}" stroke-width="2"/>`;
+    const top=252-90*bs;
+    g+=`<path d="M150 252 L150 ${top}" stroke="${dark}" stroke-width="${6*bs}"/>`;
+    g+=`<ellipse cx="${150-30*bs}" cy="${252-40*bs}" rx="${28*bs}" ry="${11*bs}" fill="${fill}" stroke="${ink}" stroke-width="1.5" transform="rotate(-25 ${150-30*bs} ${252-40*bs})"/>`;
+    g+=`<ellipse cx="${150+30*bs}" cy="${252-60*bs}" rx="${28*bs}" ry="${11*bs}" fill="${fill}" stroke="${ink}" stroke-width="1.5" transform="rotate(25 ${150+30*bs} ${252-60*bs})"/>`;
+    const cy=top-hr+10;
+    for(let i=0;i<8;i++){const a=i*Math.PI/4;g+=`<ellipse cx="${150+Math.cos(a)*hr*1.05}" cy="${cy+Math.sin(a)*hr*1.05}" rx="${hr*0.42*es}" ry="${hr*0.28*es}" fill="var(--violet)" opacity=".85" transform="rotate(${i*45} ${150+Math.cos(a)*hr*1.05} ${cy+Math.sin(a)*hr*1.05})"/>`}
+    g+=`<circle cx="150" cy="${cy}" r="${hr*0.8}" fill="hsl(${(48+(p.hue||0))%360} 90% 62%)" stroke="${ink}" stroke-width="2"/>`;
+    g+=face(150,cy,hr*0.8,mood,p.dizzy);
+    if(p.spots) g+=spots(150,252-55*bs,22*bs,p.spots,dark);
+    return wrap(g,p,hue,fl,252);
+  }
+  // tail
+  if(sp==="rat") g+=`<path d="M${150+brx*0.8} ${by+20} q60 10 50 -40 q-6 -24 10 -30" stroke="hsl(350 60% 75%)" stroke-width="5" fill="none" stroke-linecap="round"/>`;
+  if(sp==="monkey") g+=`<path d="M${150+brx*0.8} ${by+10} q50 0 40 -50 q-6 -24 -24 -10" stroke="${dark}" stroke-width="8" fill="none" stroke-linecap="round"/>`;
+  if(sp==="pig") g+=`<path d="M${150+brx*0.9} ${by} c14 -6 4 -20 14 -14 c8 6 -4 14 6 14" stroke="${dark}" stroke-width="3" fill="none"/>`;
+  // feet + body
+  g+=`<ellipse cx="${150-brx*0.45}" cy="${by+bry-4}" rx="${16*bs}" ry="${8*bs}" fill="${dark}"/><ellipse cx="${150+brx*0.45}" cy="${by+bry-4}" rx="${16*bs}" ry="${8*bs}" fill="${dark}"/>`;
+  g+=`<ellipse cx="150" cy="${by}" rx="${brx}" ry="${bry}" fill="${fill}" stroke="${ink}" stroke-width="2"/>`;
+  g+=`<ellipse cx="150" cy="${by+8}" rx="${brx*0.55}" ry="${bry*0.6}" fill="${pale}"/>`;
+  if(p.spots) g+=spots(150,by,brx*0.7,p.spots,dark);
+  // arms
+  g+=`<ellipse cx="${150-brx*0.95}" cy="${by-6}" rx="${10*bs}" ry="${22*bs}" fill="${fill}" stroke="${ink}" stroke-width="2" transform="rotate(20 ${150-brx*0.95} ${by-6})"/>`;
+  g+=`<ellipse cx="${150+brx*0.95}" cy="${by-6}" rx="${10*bs}" ry="${22*bs}" fill="${fill}" stroke="${ink}" stroke-width="2" transform="rotate(-20 ${150+brx*0.95} ${by-6})"/>`;
+  // ears
+  if(sp==="rat"){[-1,1].forEach(s=>{g+=`<circle cx="${150+s*hr*0.78}" cy="${hy-hr*0.72}" r="${20*es*hs}" fill="${fill}" stroke="${ink}" stroke-width="2"/><circle cx="${150+s*hr*0.78}" cy="${hy-hr*0.72}" r="${12*es*hs}" fill="hsl(350 70% 80%)"/>`})}
+  if(sp==="pig"){[-1,1].forEach(s=>{const x=150+s*hr*0.6,y=hy-hr*0.75;g+=`<path d="M${x-14*es*hs} ${y+8} L${x+s*6*es} ${y-26*es*hs} L${x+14*es*hs} ${y+8}Z" fill="${dark}" stroke="${ink}" stroke-width="2"/>`})}
+  if(sp==="monkey"){[-1,1].forEach(s=>{g+=`<circle cx="${150+s*hr*1.0}" cy="${hy}" r="${15*es*hs}" fill="${fill}" stroke="${ink}" stroke-width="2"/><circle cx="${150+s*hr*1.0}" cy="${hy}" r="${8*es*hs}" fill="${pale}"/>`})}
+  // head
+  g+=`<circle cx="150" cy="${hy}" r="${hr}" fill="${fill}" stroke="${ink}" stroke-width="2"/>`;
+  if(sp==="monkey") g+=`<ellipse cx="150" cy="${hy+hr*0.12}" rx="${hr*0.72}" ry="${hr*0.68}" fill="${pale}"/>`;
+  g+=face(150,hy,hr,mood,p.dizzy);
+  if(sp==="pig") g+=`<ellipse cx="150" cy="${hy+hr*0.22}" rx="${hr*0.3}" ry="${hr*0.2}" fill="${dark}" stroke="${ink}" stroke-width="1.5"/><circle cx="${150-hr*0.1}" cy="${hy+hr*0.22}" r="${hr*0.05}" fill="${ink}"/><circle cx="${150+hr*0.1}" cy="${hy+hr*0.22}" r="${hr*0.05}" fill="${ink}"/>`;
+  if(sp==="rat") g+=`<circle cx="150" cy="${hy+hr*0.18}" r="${hr*0.09}" fill="hsl(350 70% 70%)"/><path d="M${150-hr*0.2} ${hy+hr*0.2} l-${hr*0.5} -6 M${150-hr*0.2} ${hy+hr*0.26} l-${hr*0.5} 4 M${150+hr*0.2} ${hy+hr*0.2} l${hr*0.5} -6 M${150+hr*0.2} ${hy+hr*0.26} l${hr*0.5} 4" stroke="${ink}" stroke-width="1"/>`;
+  return wrap(g,p,hue,fl,by+bry);
+}
+function face(cx,cy,r,mood,dizzy){
+  const ex=r*0.34, ey=cy-r*0.12, my=cy+r*0.42, k="var(--ink)";
+  let s="";
+  if(dizzy){[-1,1].forEach(d=>{const x=cx+d*ex;s+=`<path d="M${x-5} ${ey-5} l10 10 M${x+5} ${ey-5} l-10 10" stroke="${k}" stroke-width="2.2"/>`})}
+  else{[-1,1].forEach(d=>{s+=`<circle cx="${cx+d*ex}" cy="${ey}" r="${Math.max(3.5,r*0.1)}" fill="${k}"/><circle cx="${cx+d*ex+1.5}" cy="${ey-1.5}" r="1.4" fill="#fff"/>`})}
+  const w=r*0.3, c=mood*r*0.3;
+  s+=`<path d="M${cx-w} ${my} Q${cx} ${my+c} ${cx+w} ${my}" stroke="${k}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+  return s;
+}
+function spots(cx,cy,r,n,col){
+  const pts=[[-.5,-.3],[.4,-.45],[.1,.2],[-.35,.45],[.55,.3],[-.7,.05]];
+  return pts.slice(0,Math.round(2+n*4)).map(([x,y])=>`<circle cx="${cx+x*r}" cy="${cy+y*r}" r="${4+n*4}" fill="var(--violet)" opacity=".7"/>`).join("");
+}
+function wrap(g,p,hue,fl,ground){
+  const glow=p.glow||0;
+  const filt=glow>0?`filter:drop-shadow(0 0 ${4+glow*16}px hsl(${hue} 100% 60%)) drop-shadow(0 0 ${glow*6}px hsl(${hue} 100% 70%))`:"";
+  const sh=`<ellipse cx="150" cy="${Math.min(298,ground+4)}" rx="${60-Math.min(40,fl*0.6)}" ry="7" fill="var(--ink)" opacity="${0.15-Math.min(.1,fl*0.002)}"/>`;
+  let clones="";
+  const n=p.clones||0;
+  for(let i=0;i<n;i++){const d=i%2?1:-1;clones+=`<g opacity=".4" transform="translate(${150+d*95} ${150+20}) scale(.55) translate(-150 -150)">${g}</g>`}
+  return `<svg viewBox="0 0 300 310" xmlns="http://www.w3.org/2000/svg">${sh}${clones}<g transform="translate(0 ${-fl})"><g class="${fl>4?'bob':''} ${p.flicker?'flick':''}" style="${filt};transform-origin:150px 200px">${g}</g></g></svg>`;
+}
+
+// ---------- Recipe data ----------
+const EFFECT_LABEL={size:"Body size",head:"Head size",color:"Color shift",glow:"Glow",float:"Levitation",spots:"Polka spots",ears:"Ear growth",clones:"Clones",mood:"Mood"};
+const R=[
+ {id:"omelette",name:"Quantum Omelette",subject:"rat",nick:"Pip",station:"Pan",time:"3 min",
+  goal:"Pip should grow bigger and glow softly.",
+  ings:[
+   {name:"Phase-shifted egg",eff:"size",steps:[["Crack","at 42° on the rim",42,"°",.25],["Whisk","120 rpm for 30 s",120,"rpm",.3]]},
+   {name:"Plasma butter",eff:"glow",steps:[["Weigh","12.0 g",12,"g",.2],["Melt","pan at 310 K",310,"K",.06]]},
+   {name:"Cryo-chives",eff:"color",amt:-160,steps:[["Flash-freeze","−196 °C, 5 s",-196,"°C",.1],["Cut","3 mm rings",3,"mm",.5]]}
+  ]},
+ {id:"gnocchi",name:"Gravity-Free Gnocchi",subject:"pig",nick:"Truffle",station:"Pot",time:"5 min",
+  goal:"Truffle should float above the bench.",
+  ings:[
+   {name:"Moon potato",eff:"size",steps:[["Weigh","250 g",250,"g",.15],["Boil","100 °C for 18 min",18,"min",.3],["Mash","to 0 lumps",0,"lumps",0]]},
+   {name:"Helium flour",eff:"float",steps:[["Weigh","75.0 g",75,"g",.2],["Sift","2× through 0.5 mm",0.5,"mm",.6]]},
+   {name:"Nebula sauce",eff:"spots",steps:[["Reduce","82 °C to 60%",82,"°C",.12],["Season","0.4% salt",0.4,"%",.8]]}
+  ]},
+ {id:"salad",name:"Photosynth Salad",subject:"plant",nick:"Fern-ando",station:"Cutting board",time:"3 min",
+  goal:"Fern-ando should grow tall and bloom.",
+  ings:[
+   {name:"Chlorophyll leaves",eff:"size",steps:[["Rinse","4 °C water, 10 s",4,"°C",.8],["Tear","5 cm pieces",5,"cm",.4]]},
+   {name:"UV croutons",eff:"glow",steps:[["Cube","1 cm",1,"cm",.5],["Toast","180 °C for 4 min",180,"°C",.15]]},
+   {name:"Mineral vinaigrette",eff:"ears",steps:[["Measure pH","6.2",6.2,"pH",.25],["Emulsify","3,000 rpm",3000,"rpm",.3]]}
+  ]},
+ {id:"flambe",name:"Banana Fusion Flambé",subject:"monkey",nick:"Dr. Bonobo",station:"Plasma torch",time:"4 min",
+  goal:"Dr. Bonobo's head should inflate and turn gold.",
+  ings:[
+   {name:"Fusion banana",eff:"head",steps:[["Peel","in one strip",1,"strip",0],["Slice","8 mm at 45°",8,"mm",.4]]},
+   {name:"Ionized rum",eff:"color",amt:60,steps:[["Pour","15.0 mL",15,"mL",.25],["Ignite","1,200 K for 3 s",1200,"K",.12]]},
+   {name:"Caramel lattice",eff:"glow",steps:[["Heat sugar","170 °C",170,"°C",.1],["Cool","to 40 °C",40,"°C",.3]]}
+  ]},
+ {id:"meatballs",name:"Mitosis Meatballs",subject:"rat",nick:"Pip",station:"Mitosis oven",time:"5 min",
+  goal:"Pip should split into a little Pip team.",
+  ings:[
+   {name:"Synth-mince",eff:"size",steps:[["Weigh","180 g",180,"g",.15],["Roll","24 mm spheres",24,"mm",.3]]},
+   {name:"Splitting spice",eff:"clones",steps:[["Dose","0.25 g",0.25,"g",.8]]},
+   {name:"Sear",eff:"color",amt:-40,steps:[["Sear","220 °C for 90 s",220,"°C",.12],["Rest","2 min",2,"min",.5]]}
+  ]},
+ {id:"consomme",name:"Chrono Consommé",subject:"pig",nick:"Truffle",station:"Cryo chamber",time:"4 min",
+  goal:"Truffle should get huge ears and a cosmic tint.",
+  ings:[
+   {name:"Bone broth",eff:"ears",steps:[["Simmer","85 °C",85,"°C",.1],["Clarify","egg-white raft, 20 min",20,"min",.3]]},
+   {name:"Time-crystal garnish",eff:"color",amt:-110,steps:[["Cut","2 mm shards",2,"mm",.5],["Chill","−40 °C",-40,"°C",.15]]},
+   {name:"Gel spheres",eff:"head",steps:[["Drip","0.5% alginate",0.5,"%",.6]]}
+  ]}
+];
+const WILD=[
+ {id:"salt",name:"Static salt",eff:"spots",steps:[["Sprinkle","0.10 g",0.1,"g",.9]]},
+ {id:"gas",name:"Giggle gas",eff:"mood",steps:[["Release","2 puffs",2,"puffs",.5]]},
+ {id:"dust",name:"Dark-matter dust",eff:"float",steps:[["Dust","0.05 g",0.05,"g",1]]},
+ {id:"goo",name:"Mutagen goo",eff:"head",steps:[["Drop","3 drops",3,"drops",.6]]}
+];
+const TIERS=[{min:85,k:"p",n:"Perfect",m:1},{min:65,k:"g",n:"Good",m:.6},{min:40,k:"u",n:"Unstable",m:.25},{min:0,k:"b",n:"Backfire",m:-.7}];
+const tierOf=q=>TIERS.find(t=>q>=t.min);
+
+// state
+const ST={};
+R.forEach(r=>{ST[r.id]={inc:r.ings.map(()=>true),p:r.ings.map((g,i)=>g.steps.map((s,j)=>[92,78,60][(i+j)%3])),wild:{}}});
+WILD.forEach(w=>R.forEach(r=>ST[r.id].wild[w.id]=null));
+let cur="omelette";
+
+function measured(s,p,j){
+  const [,,t,u,tol]=s; if(tol===0) return p>=85?`${t} ${u}`:`${Math.round((100-p)/12)} ${u}`;
+  const dev=(100-p)/100*tol*(j%2?-1:1);
+  const v=t+Math.abs(t||1)*dev;
+  const dec=(String(t).split(".")[1]||"").length;
+  return `${v.toFixed(Math.max(dec,Math.abs(v)<10?1:0))} ${u}`;
+}
+
+function compute(r){
+  const s=ST[r.id];
+  const P={bs:1,hs:1,es:1,hue:0,glow:0,float:0,spots:0,clones:0,mood:0};
+  const log=[]; let qs=[], missing=0;
+  const list=r.ings.map((g,i)=>({g,on:s.inc[i],p:s.p[i]}));
+  WILD.forEach(w=>{if(s.wild[w.id]) list.push({g:w,on:true,p:s.wild[w.id],wild:true})});
+  list.forEach(({g,on,p,wild})=>{
+    if(!on){missing++;log.push({c:"var(--muted)",t:`${g.name} left out: no ${EFFECT_LABEL[g.eff].toLowerCase()}, −15 score`});return}
+    const q=p.reduce((a,b)=>a+b,0)/p.length; qs.push(q);
+    const T=tierOf(q), m=T.m*(wild?1.2:1);
+    apply(P,g,m,T);
+    log.push({c:`var(--${{p:"ok",g:"violet",u:"warn",b:"bad"}[T.k]})`,t:`${g.name} · ${T.n} ${Math.round(q)}% → ${describe(g,m)}`});
+  });
+  let score=qs.length?qs.reduce((a,b)=>a+b,0)/qs.length:0;
+  score=Math.max(0,Math.round(score-missing*15));
+  P.mood=Math.max(-1,Math.min(1,(score-55)/40+P.mood));
+  P.dizzy=score<40;
+  return {P,log,score};
+}
+function apply(P,g,m,T){
+  switch(g.eff){
+    case"size":P.bs+=0.3*m;break;
+    case"head":P.hs+=0.45*m;break;
+    case"ears":P.es+=0.9*m;break;
+    case"color":if(m<0){P.sick=true;P.hue+=90-0}else P.hue+=(g.amt||80)*m;break;
+    case"glow":if(m<0)P.flicker=true;else P.glow+=m;break;
+    case"float":P.float+=m>0?45*m:0;if(m<0)P.bs-=0.12;break;
+    case"spots":P.spots=Math.min(1,P.spots+Math.abs(m));break;
+    case"clones":P.clones=m>=.6?2:m>0?1:0;if(m<0)P.hs-=0.2;break;
+    case"mood":P.mood+=0.5*m;break;
+  }
+  if(T.k==="u") P.flicker=P.flicker||g.eff==="glow";
+}
+function describe(g,m){
+  const pct=Math.round(Math.abs(m)*100);
+  if(m<0) return {size:"subject shrinks",head:"pinhead",ears:"ears shrivel",color:"turns sickly green",glow:"glow sputters",float:"sinks, feels heavy",spots:"itchy spots",clones:"clone fizzles, head shrinks",mood:"grumpy"}[g.eff];
+  return {size:`grows +${Math.round(30*m)}%`,head:`head +${Math.round(45*m)}%`,ears:`ears +${Math.round(90*m)}%`,color:`hue shift ${pct}%`,glow:`glow ${pct}%`,float:`floats ${Math.round(45*m)} cm`,spots:"polka spots appear",clones:m>=.6?"2 clones":"1 shaky clone",mood:"giggles"}[g.eff];
+}
+
+// ---------- Lab UI ----------
+const $=s=>document.querySelector(s);
+function renderList(){
+  $("#rlist").innerHTML=R.map(r=>{const {score}=compute(r);return `<button class="rbtn" role="tab" aria-selected="${r.id===cur}" data-r="${r.id}"><b>${r.name}</b><em>${score}%</em><span>${SPECIES[r.subject].name} · ${r.station}</span></button>`}).join("");
+}
+function renderComp(){
+  const r=R.find(x=>x.id===cur), s=ST[r.id];
+  let h=`<div class="comp-head"><div><p class="eyebrow">Recipe · ${r.station} · ${r.time} · subject <b>${r.nick}</b></p><h2>${r.name}</h2><p class="muted" style="margin:0">${r.goal}</p></div>
+  <div class="presets" aria-label="Set all steps"><button data-preset="98">All perfect</button><button data-preset="72">All good</button><button data-preset="50">Sloppy</button><button data-preset="20">Disaster</button></div></div>`;
+  const ingBlock=(g,on,p,key,removable)=>{
+    const q=p.reduce((a,b)=>a+b,0)/p.length, T=tierOf(q);
+    return `<div class="ing ${on?"":"off"}"><div class="ing-h"><label><input type="checkbox" id="inc-${key}" data-inc="${key}" ${on?"checked":""}>${g.name}${removable?' <span class="chip">wildcard</span>':''}</label>
+    <div class="eff"><span class="chip">${EFFECT_LABEL[g.eff]}</span><span class="chip tier-${T.k}">${T.n} · ${Math.round(q)}%</span></div></div>
+    <div class="steps">${g.steps.map((st,j)=>`<div class="step"><span class="no">${j+1}</span><span class="vb">${st[0]}<small>${st[1]}</small></span>
+      <input type="range" min="0" max="100" value="${p[j]}" id="s-${key}-${j}" data-s="${key}" data-j="${j}" aria-label="${g.name} ${st[0]} success" ${on?"":"disabled"}>
+      <span class="pct tier-${tierOf(p[j]).k}">${p[j]}%</span><span class="meas">got ${measured(st,p[j],j)}</span></div>`).join("")}</div></div>`;
+  };
+  r.ings.forEach((g,i)=>h+=ingBlock(g,s.inc[i],s.p[i],"i"+i,false));
+  WILD.forEach(w=>{if(s.wild[w.id]) h+=ingBlock(w,true,s.wild[w.id],"w"+w.id,true)});
+  h+=`<p class="eyebrow" style="margin-top:10px">Pantry wildcards · add an off-recipe ingredient</p><div class="pantry">${WILD.map(w=>`<button data-w="${w.id}" aria-pressed="${!!s.wild[w.id]}">${s.wild[w.id]?"✓ ":"+ "}${w.name}</button>`).join("")}</div>`;
+  $("#comp").innerHTML=h;
+}
+function renderPreview(){
+  const r=R.find(x=>x.id===cur); const {P,log,score}=compute(r);
+  const T=tierOf(score);
+  const verdict=score>=85?`${r.nick} is thrilled. Order fulfilled.`:score>=65?`${r.nick} is happy. Effect slightly off.`:score>=40?`${r.nick} looks puzzled. Side effects.`:`${r.nick} is dizzy. Reputation −1.`;
+  const credits=Math.round(score*1.5);
+  $("#preview").innerHTML=`<p class="eyebrow">Live outcome · served to <b>${r.nick}</b> (${SPECIES[r.subject].name})</p>
+  <div class="stage">${creature(r.subject,P)}</div>
+  <div class="score"><span class="big tier-${T.k}">${score}%</span><span class="verdict">${verdict}</span></div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">+${credits} lab credits</span><span class="chip">${"★".repeat(Math.max(0,Math.ceil(score/20)))}${"☆".repeat(5-Math.max(0,Math.ceil(score/20)))}</span></div>
+  <ul class="efflist">${log.map(l=>`<li style="color:${l.c}"><span class="d"></span><span style="color:var(--ink)">${l.t}</span></li>`).join("")}</ul>`;
+}
+function renderLab(full=true){ if(full) renderComp(); renderPreview(); renderList(); }
+
+$("#rlist").addEventListener("click",e=>{const b=e.target.closest("[data-r]");if(b){cur=b.dataset.r;renderLab()}});
+$("#comp").addEventListener("input",e=>{
+  const t=e.target; if(!t.dataset.s) return;
+  const s=ST[cur], key=t.dataset.s, j=+t.dataset.j, v=+t.value;
+  if(key[0]==="i") s.p[+key.slice(1)][j]=v; else s.wild[key.slice(1)][j]=v;
+  const row=t.closest(".step"); const pc=row.querySelector(".pct"); pc.textContent=v+"%"; pc.className="pct tier-"+tierOf(v).k;
+  const g=key[0]==="i"?R.find(x=>x.id===cur).ings[+key.slice(1)]:WILD.find(w=>w.id===key.slice(1));
+  row.querySelector(".meas").textContent="got "+measured(g.steps[j],v,j);
+  const arr=key[0]==="i"?s.p[+key.slice(1)]:s.wild[key.slice(1)]; const q=arr.reduce((a,b)=>a+b,0)/arr.length, T=tierOf(q);
+  const chip=t.closest(".ing").querySelector(".eff .chip:last-child"); chip.className="chip tier-"+T.k; chip.textContent=`${T.n} · ${Math.round(q)}%`;
+  renderLab(false);
+});
+$("#comp").addEventListener("change",e=>{
+  const t=e.target; if(!t.dataset.inc) return; const key=t.dataset.inc, s=ST[cur];
+  if(key[0]==="i") s.inc[+key.slice(1)]=t.checked; else s.wild[key.slice(1)]=null;
+  renderLab();
+});
+$("#comp").addEventListener("click",e=>{
+  const w=e.target.closest("[data-w]"), pr=e.target.closest("[data-preset]"), s=ST[cur];
+  if(w){const W=WILD.find(x=>x.id===w.dataset.w); s.wild[W.id]=s.wild[W.id]?null:W.steps.map(()=>70); renderLab()}
+  if(pr){const v=+pr.dataset.preset; s.p=s.p.map(a=>a.map(()=>v)); Object.keys(s.wild).forEach(k=>{if(s.wild[k]) s.wild[k]=s.wild[k].map(()=>v)}); renderLab()}
+});
+
+// ---------- Loop diagram ----------
+const LOOP=[
+ {k:"Order",x:40,y:40,n:"01 · take",d:"A subject arrives with a ticket: dish, requested effect, timer.",li:["Ingredients & quantities","Required tools","Recipe steps","Requested effect (e.g. glow)"]},
+ {k:"Stations & tools",x:330,y:40,n:"02 · prepare",d:"Move between stations on the bench. Each station owns a family of steps.",li:["Pan / plasma torch: heat","Cutting board: cut, tear, cube","Oven / cryo chamber: bake, freeze","Precision scale & pipette: dose"]},
+ {k:"Controls",x:340,y:235,n:"03 · perform",d:"Realistic, immersive gestures. Precision is scored per step from 0 to 100%.",li:["Slice to cut","Turn to stir","Hold to pour","Scroll to set heat"]},
+ {k:"Outcome",x:150,y:285,n:"04 · plate",d:"Plate up: take components and compose. The dish carries every step's precision.",li:["Composition order matters","Per-ingredient tier: Perfect / Good / Unstable / Backfire","Missing ingredients cost score"]},
+ {k:"Serve",x:20,y:160,n:"05 · observe",d:"The subject eats. Effects play out on their body, then you earn credits and reputation.",li:["Reaction shot (clip-able)","Credits → new equipment","Codex entry with the real science"]}
+];
+let loopOn=0;
+function renderLoop(){
+  const svg=$("#loopsvg");
+  svg.querySelectorAll(".node").forEach(n=>n.remove());
+  LOOP.forEach((s,i)=>{
+    const w=Math.max(120,s.k.length*9+30);
+    const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("class","node"+(i===loopOn?" on":""));g.setAttribute("tabindex","0");g.setAttribute("role","button");g.setAttribute("aria-label",s.k);
+    g.innerHTML=`<rect x="${s.x}" y="${s.y}" width="${w}" height="54" rx="10"/><text class="n" x="${s.x+12}" y="${s.y+19}">${s.n}</text><text x="${s.x+12}" y="${s.y+40}">${s.k}</text>`;
+    g.addEventListener("click",()=>{loopOn=i;renderLoop()});
+    g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();loopOn=i;renderLoop()}});
+    svg.appendChild(g);
+  });
+  const s=LOOP[loopOn];
+  $("#loopdetail").innerHTML=`<p class="eyebrow">Stage ${loopOn+1} of 5</p><h2>${s.k}</h2><p>${s.d}</p><ul class="tight">${s.li.map(l=>`<li>${l}</li>`).join("")}</ul>
+  <div style="display:flex;gap:6px;margin-top:12px"><button class="chip" style="cursor:pointer;background:none" id="lprev">← previous</button><button class="chip" style="cursor:pointer;background:none" id="lnext">next →</button></div>`;
+  $("#lprev").onclick=()=>{loopOn=(loopOn+4)%5;renderLoop()};
+  $("#lnext").onclick=()=>{loopOn=(loopOn+1)%5;renderLoop()};
+}
+
+// ---------- Tech pipeline ----------
+const PIPE=[
+ {k:"Recipe database",t:"JSON",d:"Every recipe, ingredient, step target, tolerance and effect lives in data files. Designers tune without code.",li:["Step = verb + target + unit + tolerance","Ingredient = steps + effect type","Hot-reload in editor"]},
+ {k:"Station simulation",t:"per step",d:"Each station runs a small sim: heat transfer for pans, volume for pours, blade path for cuts.",li:["Deterministic, fixed timestep","Gesture recognizer per station"]},
+ {k:"Precision scorer",t:"0–100%",d:"Compares the measured value with the target. Score falls off with distance relative to tolerance.",li:["score = 100 × (1 − |Δ| / tolerance), clamped","Tiers: ≥85 Perfect, ≥65 Good, ≥40 Unstable, else Backfire"]},
+ {k:"Effect resolver",t:"stack",d:"Turns each ingredient's tier into effect magnitude, combines them and resolves conflicts.",li:["Backfire inverts the effect","Wildcards add volatile effects (×1.2)","Missing ingredient: −15 score"]},
+ {k:"Subject rig",t:"blendshapes",d:"One rig per species, driven by parameters: body scale, head scale, ears, hue, glow, float, spots, clones.",li:["Shared animation set","Cheap in WebGL memory"]},
+ {k:"Serve & reward",t:"meta",d:"Score converts to credits, stars and reputation; unlocks stations and recipes.",li:["Clip capture of the reaction","Save to cloud for browser ↔ PC"]}
+];
+let pipeOn=2;
+function renderPipe(){
+  $("#pipe").innerHTML=PIPE.map((s,i)=>`${i?'<div class="ar">↓</div>':''}<div class="st ${i===pipeOn?'on':''}" data-p="${i}" tabindex="0" role="button"><b>${s.k}</b><span class="chip">${s.t}</span></div>`).join("");
+  const s=PIPE[pipeOn];
+  $("#pipedetail").innerHTML=`<p class="eyebrow">Stage ${pipeOn+1} of ${PIPE.length}</p><h2>${s.k}</h2><p>${s.d}</p><ul class="tight">${s.li.map(l=>`<li>${l}</li>`).join("")}</ul>
+  <p class="eyebrow" style="margin-top:14px">Try it</p><p class="muted">The Recipe Lab tab runs this exact pipeline in the browser: change a step's precision and watch the resolver and rig update live.</p>`;
+}
+$("#pipe").addEventListener("click",e=>{const b=e.target.closest("[data-p]");if(b){pipeOn=+b.dataset.p;renderPipe()}});
+$("#pipe").addEventListener("keydown",e=>{const b=e.target.closest("[data-p]");if(b&&(e.key==="Enter"||e.key===" ")){e.preventDefault();pipeOn=+b.dataset.p;renderPipe()}});
+
+// roster
+$("#roster").innerHTML=[["rat","Pip",{}],["pig","Truffle",{hs:1.3,glow:.6}],["monkey","Dr. Bonobo",{es:1.8,hue:40}],["plant","Fern-ando",{bs:1.2,spots:.5}]].map(([sp,n,p])=>`<div>${creature(sp,p)}<div>${n}</div></div>`).join("");
+
+// tabs
+const VIEWS=["vision","loop","market","tech","look","kitchen","lab"];
+function show(v){
+  if(!VIEWS.includes(v)) v="vision";
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.v===v));
+  VIEWS.forEach(x=>$("#v-"+x).hidden=x!==v);
+  try{localStorage.setItem("cl-tab",v)}catch(e){}
+  if(v==="kitchen"&&window.initKitchen) window.initKitchen();
+}
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b){location.hash=b.dataset.v;show(b.dataset.v)}});
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+
+renderLoop(); renderPipe(); renderLab();
+show(location.hash.slice(1)||"vision");
+</script>
+<script>
+// ---------- Kitchen 3D ----------
+(function(){
+const $=s=>document.querySelector(s);
+if(!window.THREE||!THREE.OrbitControls){
+  window.initKitchen=()=>{$("#khint").textContent="The 3D view could not load. Check your connection and reload the page."};
+  if(location.hash==="#kitchen") window.initKitchen();
+  return;
+}
+const T=THREE;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim()||"#888888";
+const col=n=>new T.Color(css(n));
+const hex=c=>"#"+c.toString(16).padStart(6,"0");
+const TIER=[0x8e9b9a,0xdfe6e5,0x6a4be0,0xf2552c];
+const TIER_NAME=["Standard","Pro","Quantum","Prototype"];
+const mat=(c,o={})=>new T.MeshStandardMaterial(Object.assign({color:c,roughness:.45,metalness:.3},o));
+const glow=(c,i)=>mat(c,{emissive:c,emissiveIntensity:i,metalness:0});
+const MAT={
+  steel:mat(0x7d8b8c,{metalness:.6,roughness:.35}),
+  top:mat(0xc9d3d2,{metalness:.7,roughness:.25}),
+  dark:mat(0x22312f,{roughness:.6}),
+  glass:mat(0xbfe9ff,{transparent:true,opacity:.28,roughness:.05,metalness:0,depthWrite:false}),
+  white:mat(0xf4f4f0,{metalness:0}),
+  wood:mat(0xc79a62,{metalness:0,roughness:.8})
+};
+function add(g,geo,m,x,y,z){const o=new T.Mesh(geo,m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;g.add(o);return o}
+const box=(g,w,h,d,m,x,y,z)=>add(g,new T.BoxGeometry(w,h,d),m,x,y,z);
+const cyl=(g,rt,rb,h,m,x,y,z,s=28)=>add(g,new T.CylinderGeometry(rt,rb,h,s),m,x,y,z);
+const sph=(g,r,m,x,y,z)=>add(g,new T.SphereGeometry(r,20,14),m,x,y,z);
+const dome=(g,r,m,x,y,z)=>add(g,new T.SphereGeometry(r,28,14,0,Math.PI*2,0,Math.PI/2),m,x,y,z);
+const trim=lv=>mat(TIER[lv-1],{emissive:lv>=3?TIER[lv-1]:0,emissiveIntensity:lv>=3?.45:0,metalness:.5});
+function counter(g,w=1.6,d=.8){box(g,w,.85,d,MAT.steel,0,.425,0);box(g,w+.04,.06,d+.04,MAT.top,0,.88,0)}
+function knob(g,lv,x,y,z){const k=cyl(g,.045,.045,.03,trim(lv),x,y,z,16);k.rotation.x=Math.PI/2}
+function extras(g,lv,w,h,d){
+  box(g,w*.9,.05,.02,trim(lv),0,.6,d/2+.012);
+  if(lv===4){const r=add(g,new T.TorusGeometry(.32,.015,8,48),glow(0x9d88ff,1),0,h+.35,0);r.rotation.x=Math.PI/2;r.userData.spin={axis:"z",v:1.2}}
+}
+const B={
+  pan(lv){const g=new T.Group();counter(g);
+    cyl(g,.24,.24,.02,glow(lv>=3?0x7fb4ff:0xff6a3d,.3+lv*.25),0,.92,0);
+    cyl(g,.27,.23,.07,MAT.dark,0,.965,0);box(g,.42,.03,.05,MAT.dark,.47,.985,0);
+    cyl(g,.13,.13,.01,MAT.white,0,1.005,0);sph(g,.05,mat(0xffc533,{metalness:0}),0,1.015,0);
+    cyl(g,.18,.18,.02,MAT.dark,-.5,.92,-.1);
+    knob(g,lv,-.4,.7,.415);knob(g,lv,-.25,.7,.415);extras(g,lv,1.6,1.0,.8);return g},
+  board(lv){const g=new T.Group();counter(g);
+    box(g,.95,.04,.55,MAT.wood,-.1,.93,0);
+    const v=cyl(g,.06,.06,.35,mat(0x4caf50,{metalness:0}),-.25,1.01,0);v.rotation.z=Math.PI/2;
+    for(let i=0;i<3;i++){const s=cyl(g,.06,.06,.02,mat(0x7ed67e,{metalness:0}),.02+i*.05,.96,.02);s.rotation.z=Math.PI/2}
+    const k=box(g,.36,.008,.07,MAT.top,.3,.96,.14);k.rotation.y=-.5;const h=box(g,.15,.03,.035,trim(lv),.5,.965,.03);h.rotation.y=-.5;
+    if(lv>=2) box(g,.9,.003,.01,glow(0xff2a2a,1.2),-.1,.952,.06);
+    if(lv>=3) box(g,.04,.5,.04,MAT.dark,-.55,1.2,-.3);
+    extras(g,lv,1.6,1.0,.8);return g},
+  oven(lv){const g=new T.Group();
+    box(g,1.0,1.8,.8,MAT.steel,0,.9,0);box(g,.72,.56,.02,glow(lv>=3?0x9d88ff:0xff8a3d,.2+lv*.2),0,.95,.41);
+    box(g,.8,.04,.05,MAT.top,0,1.3,.43);[-.25,0,.25].forEach(x=>knob(g,lv,x,1.55,.415));
+    box(g,.3,.08,.02,glow(0x3cc48e,.6),0,1.7,.41);extras(g,lv,1.0,1.8,.8);return g},
+  scale(lv){const g=new T.Group();counter(g,1.2,.7);
+    box(g,.5,.05,.5,MAT.top,0,.94,0);box(g,.34,.12,.02,glow(0x3cc48e,.6),0,.72,.36);
+    cyl(g,.1,.1,.26,MAT.glass,0,1.1,0);cyl(g,.094,.094,.12,glow(0x6a4be0,.25),0,1.03,0);
+    if(lv>=3){const p=cyl(g,.01,.01,.35,MAT.dark,.35,1.1,0);const tip=cyl(g,.03,.01,.08,trim(lv),.35,1.32,0)}
+    if(lv>=4) dome(g,.34,MAT.glass,0,.965,0);
+    extras(g,lv,1.2,1.3,.7);return g},
+  centrifuge(lv){const g=new T.Group();counter(g,1.2,.7);
+    cyl(g,.3,.32,.38,MAT.steel,0,1.1,0);
+    const sp=box(g,.44,.03,.06,trim(lv),0,1.3,0);sp.userData.spin={axis:"y",v:2+lv*3};
+    dome(g,.31,MAT.glass,0,1.29,0);box(g,.2,.08,.02,glow(0x3cc48e,.6),0,1.05,.32);
+    extras(g,lv,1.2,1.6,.7);return g},
+  cryo(lv){const g=new T.Group();
+    cyl(g,.5,.5,.12,MAT.dark,0,.06,0);cyl(g,.45,.45,1.7,MAT.glass,0,.97,0);cyl(g,.5,.5,.12,MAT.steel,0,1.88,0);
+    const c=sph(g,.16,glow(0x9fe8ff,.4+lv*.15),0,.95,0);c.userData.spin={axis:"y",v:.6};
+    for(let i=0;i<lv;i++){const r=add(g,new T.TorusGeometry(.44,.012,6,40),glow(0x9fe8ff,.6),0,.4+i*.35,0);r.rotation.x=Math.PI/2}
+    extras(g,lv,.6,1.95,1.0);return g},
+  torch(lv){const g=new T.Group();counter(g);
+    cyl(g,.04,.04,.75,MAT.dark,0,1.28,-.3,12);box(g,.05,.05,.38,MAT.dark,0,1.64,-.12);
+    cyl(g,.03,.07,.16,trim(lv),0,1.55,.05,16);
+    const f=add(g,new T.ConeGeometry(.05+lv*.01,.32,16),mat(lv>=3?0x7fb4ff:0xff8a3d,{emissive:lv>=3?0x7fb4ff:0xff8a3d,emissiveIntensity:1.3,transparent:true,opacity:.85}),0,1.3,.05);f.rotation.x=Math.PI;
+    cyl(g,.16,.14,.025,MAT.white,0,.925,.05);box(g,.16,.04,.1,mat(0x9b4a3a,{metalness:0}),0,.96,.05);
+    extras(g,lv,1.6,1.7,.8);return g},
+  mitosis(lv){const g=new T.Group();counter(g,1.4,.8);
+    cyl(g,.42,.45,.08,MAT.steel,0,.95,0);dome(g,.4,MAT.glass,0,.99,0);
+    const cells=new T.Group();cells.position.set(0,1.12,0);cells.userData.spin={axis:"y",v:.8};g.add(cells);
+    const n=lv+1;for(let i=0;i<n;i++){const a=i/n*Math.PI*2;sph(cells,.075,glow(0x7be07b,.45),Math.cos(a)*.16,0,Math.sin(a)*.16)}
+    extras(g,lv,1.4,1.45,.8);return g},
+  plating(lv){const g=new T.Group();counter(g,2.2,.8);
+    [-.6,0,.6].forEach((x,i)=>{cyl(g,.17,.15,.03,MAT.white,x,.93,.05);sph(g,.05,mat([0xf2552c,0x6a4be0,0x3cc48e][i],{metalness:0}),x,.97,.05)});
+    [-.6,.6].forEach(x=>{cyl(g,.008,.008,.6,MAT.dark,x,1.9,-.05,6);cyl(g,.08,.2,.14,trim(lv),x,1.55,-.05);sph(g,.06,glow(0xffa860,.9),x,1.47,-.05)});
+    if(lv>=3) box(g,1.6,.5,.02,mat(0x9d88ff,{transparent:true,opacity:.25,emissive:0x9d88ff,emissiveIntensity:.3}),0,1.25,-.38);
+    extras(g,lv,2.2,2.2,.8);return g},
+  pantry(lv){const g=new T.Group();
+    box(g,1.2,2,.04,MAT.steel,0,1,-.23);box(g,.04,2,.5,MAT.steel,-.6,1,0);box(g,.04,2,.5,MAT.steel,.6,1,0);
+    const C=[0x6a4be0,0xf2552c,0x3cc48e,0xffc533,0x7fb4ff];
+    [.05,.55,1.05,1.55,1.98].forEach((y,si)=>{box(g,1.2,.03,.5,MAT.top,0,y,0);if(si<4)for(let i=0;i<5;i++)cyl(g,.07,.07,.2,mat(C[(i+si)%5],{transparent:true,opacity:.85,emissive:lv>=3?C[(i+si)%5]:0,emissiveIntensity:.25,metalness:0}),-.44+i*.22,y+.12,0,14)});
+    if(lv>=2) box(g,1.16,1.95,.01,MAT.glass,0,1,.25);
+    extras(g,lv,1.2,2.0,.5);return g}
+};
+const DEFS=[
+ {id:"pantry",name:"Ingredient pantry",short:"PANTRY",cat:"Storage",w:1.2,d:.5,verb:"PICK",
+  use:"Where every order starts. Pick ingredients by reading labels, freshness and batch numbers. Wrong batch means a weaker effect.",
+  how:["Click a jar to grab it","Hover to read its label and expiry","Drag into the tray"],scored:"Right ingredient, freshness",
+  levels:[["Open shelves","20 slots","Basic ingredients",0,"20 SLOTS"],["Sealed cabinet","40 slots, no decay","Fresh bonus +5%",250,"40 SLOTS · SEALED"],["Stasis pantry","60 slots, glowing labels","Exotic: helium flour",800,"STASIS · 60"],["Matter compiler","Prints rare ingredients","Wildcards on demand",2200,"COMPILE · 0.1 g"]]},
+ {id:"oven",name:"Oven",short:"OVEN",cat:"Station",w:1.0,d:.8,verb:"BAKE",
+  use:"Bakes, roasts and dries. The player sets temperature and time on dials and watches a live core-temperature curve.",
+  how:["Scroll the dial to set °C","Click the timer to start","Open the door to check (heat loss!)"],scored:"Temperature × time curve",
+  levels:[["Convection oven","±10 °C","Bake, roast",0,"180 °C ±10"],["Steam-combi","±2 °C, humidity","Soft gels, gnocchi",400,"180 °C ±2 · 60% RH"],["Infra-red oven","±0.5 °C, 600 °C max","Crisp effects (spots)",1100,"420 °C ±0.5"],["Time-dilation oven","Bake 1 h in 10 s","Aging effects",3000,"×360 TIME"]]},
+ {id:"pan",name:"Cooktop & pan",short:"PAN",cat:"Station",w:1.6,d:.8,verb:"MELT",
+  use:"Fries, melts and sears. The player tilts the pan and watches color and sizzle; heat is shown in kelvin.",
+  how:["Scroll to set heat","Move mouse to tilt and swirl","Hold to press down"],scored:"Temperature, time, browning",
+  levels:[["Induction pan","±5 K","Fry, melt",0,"310 K ±5"],["Magnetic hob","±1 K","Caramelize · Banana Flambé",300,"310 K ±1"],["Plasma hob","up to 1,200 K","Sear · levitation",900,"1,200 K ±1"],["Fusion wok","±0.1 K, 3,000 K","Double effect on Perfect",2400,"3,000 K ±0.1"]]},
+ {id:"board",name:"Cutting board",short:"BOARD",cat:"Tool",w:1.6,d:.8,verb:"CUT",
+  use:"Slices, dices and tears. The player drags the knife across the ingredient; thickness and angle are measured on each cut.",
+  how:["Drag across to slice","Hold Shift to lock the angle","Double-click to flip the ingredient"],scored:"Thickness (mm), angle (°)",
+  levels:[["Chef knife","±1 mm","Slice, dice",0,"3.0 mm ±1"],["Laser guide","±0.2 mm","Julienne, angled cuts",200,"3.0 mm ±0.2"],["Ultrasonic blade","±0.05 mm, no crush","Clean shards (time crystal)",700,"2.00 mm ±0.05"],["Molecular slicer","Cuts by molecule count","Clone effects",2000,"10⁶ MOLECULES"]]},
+ {id:"torch",name:"Plasma torch",short:"TORCH",cat:"Tool",w:1.6,d:.8,verb:"SEAR",
+  use:"Flash-sears and ignites. The flame is aimed with the mouse; distance and dwell time decide the crust.",
+  how:["Aim with the mouse","Hold to fire","Wheel to change flame width"],scored:"Distance, dwell time, K",
+  levels:[["Butane torch","1,600 K","Crème brûlée crust",0,"1,600 K"],["Arc torch","2,400 K, steady","Flambé ignite",500,"2,400 K"],["Plasma torch","5,000 K, blue","Levitation effects",1400,"5,000 K"],["Star torch","Tunable spectrum","Glow color control",3200,"λ 450 nm"]]},
+ {id:"cryo",name:"Cryo chamber",short:"CRYO",cat:"Station",w:1.0,d:1.0,verb:"FREEZE",
+  use:"Flash-freezes, chills and shatters. The player times the dip; too long and the ingredient cracks.",
+  how:["Drop the ingredient in","Release at the right moment","Tap to shatter"],scored:"Temperature, dwell (s)",
+  levels:[["Blast chiller","−18 °C","Chill, set",0,"−18 °C"],["Dry-ice bath","−78 °C","Fog garnish",350,"−78 °C"],["Liquid nitrogen","−196 °C","Cryo-chives · glow",1000,"−196 °C"],["Zero-point cradle","0.01 K","Quantum effects",2800,"0.01 K"]]},
+ {id:"scale",name:"Precision scale",short:"SCALE",cat:"Tool",w:1.2,d:.7,verb:"WEIGH",
+  use:"Doses every ingredient. The player drip-clicks into the beaker while the display counts up; overshoot cannot be undone.",
+  how:["Click to drip","Hold for a steady pour","Right-click to tare"],scored:"Grams vs target",
+  levels:[["Kitchen scale","1 g","Basic dosing",0,"12 g"],["Lab balance","0.1 g","Spices, salts",250,"12.0 g"],["Micro-pipette scale","0.01 g","Splitting spice",900,"12.00 g"],["Mass spectrometer","0.001 g + purity","Purity bonus",2600,"12.000 g · 99.9%"]]},
+ {id:"centrifuge",name:"Centrifuge whisk",short:"SPIN",cat:"Station",w:1.2,d:.7,verb:"WHISK",
+  use:"Whisks, emulsifies and separates. The player circles the mouse to hold a target rpm band.",
+  how:["Circle the cursor to spin","Keep speed inside the band","Stop on the beep"],scored:"rpm, duration",
+  levels:[["Hand whisk","120 rpm","Whisk eggs",0,"120 rpm"],["Stand mixer","600 rpm","Doughs, meringue",300,"600 rpm"],["Centrifuge","3,000 rpm","Emulsions · head size",1000,"3,000 rpm"],["Vortex core","12,000 rpm, separates","Extract essences",2700,"12,000 rpm"]]},
+ {id:"mitosis",name:"Mitosis oven",short:"MITO",cat:"Station",w:1.4,d:.8,verb:"DIVIDE",
+  use:"Triggers controlled cell division in food. The player feeds energy pulses to the rhythm of the cells.",
+  how:["Click on each pulse","Keep cells in sync","Stop before overgrowth"],scored:"Rhythm accuracy",
+  levels:[["Petri warmer","2 cells","Mitosis Meatballs",1200,"2 CELLS"],["Division chamber","3 cells","Clone effect ×1",2000,"3 CELLS"],["Bio-forge","4 cells","Clone effect ×2",3200,"4 CELLS"],["Genesis dome","5 cells, stable","Permanent clones (1 shift)",5000,"5 CELLS · STABLE"]]},
+ {id:"plating",name:"Plating pass",short:"PLATE",cat:"Station",w:2.2,d:.8,verb:"PLATE",
+  use:"Composes and serves the dish. Order of layers changes how effects combine; the pass sends the plate to the subject room.",
+  how:["Drag components onto the plate","Use tweezers for garnish","Ring the bell to serve"],scored:"Layer order, layout",
+  levels:[["Steel pass","1 plate","Serve",0,"1 PLATE"],["Heated pass","2 plates, warm","Hold time +30 s",300,"2 PLATES · 60 °C"],["Holo pass","Shows predicted effect","Effect preview",1200,"PREVIEW ON"],["Teleport hatch","Instant serve","Combo bonus",3000,"0.0 s SERVE"]]}
+];
+const DEFAULT={pantry:[-4.3,-3.05,0],oven:[-2.75,-3.05,0],pan:[-1.1,-3.05,0],board:[.65,-3.05,0],torch:[2.4,-3.05,0],cryo:[4.3,-2.95,0],scale:[-4.55,-.9,Math.PI/2],centrifuge:[-4.55,.9,Math.PI/2],mitosis:[-.7,.5,0],plating:[1.5,.5,0]};
+
+const ROOM={w:10,d:7};
+let inited=false,renderer,scene,camera,controls,clock,room,gridLines,floor,walls=[];
+let stations=[],hovered=null,selected=null,editing=false,drag=null,down=null,tw=null,modalSt=null,iso=null,returnView=null;
+const ray=new T.Raycaster(),ptr=new T.Vector2(),plane=new T.Plane(new T.Vector3(0,1,0),0),hit=new T.Vector3();
+const HOME={p:new T.Vector3(7.5,7.2,9.2),t:new T.Vector3(0,.4,0)};
+
+function load(){try{return JSON.parse(localStorage.getItem("cl-kitchen")||"null")}catch(e){return null}}
+function save(){try{const o={layout:{},levels:{}};stations.forEach(s=>{o.layout[s.def.id]=[s.group.position.x,s.group.position.z,s.group.rotation.y];o.levels[s.def.id]=s.level});localStorage.setItem("cl-kitchen",JSON.stringify(o))}catch(e){}}
+
+function buildRoom(){
+  room=new T.Group();
+  floor=new T.Mesh(new T.PlaneGeometry(ROOM.w,ROOM.d),mat(0xffffff,{metalness:0,roughness:.9}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;room.add(floor);
+  const pts=[];for(let x=-5;x<=5.001;x+=.5){pts.push(x,0,-3.5,x,0,3.5)}for(let z=-3.5;z<=3.501;z+=.5){pts.push(-5,0,z,5,0,z)}
+  const gg=new T.BufferGeometry();gg.setAttribute("position",new T.Float32BufferAttribute(pts,3));
+  gridLines=new T.LineSegments(gg,new T.LineBasicMaterial({color:0x888888,transparent:true,opacity:.5}));gridLines.position.y=.003;room.add(gridLines);
+  const wm=mat(0xffffff,{metalness:0,roughness:.9});
+  walls=[box(room,ROOM.w,2.8,.1,wm,0,1.4,-3.55),box(room,.1,2.8,ROOM.d,wm.clone(),-5.05,1.4,0)];
+  walls.forEach(w=>w.castShadow=false);
+  // observation window to the subject room
+  box(room,2.6,.8,.04,MAT.dark,-.2,2.05,-3.5);
+  box(room,2.44,.66,.02,mat(0x9d88ff,{emissive:0x6a4be0,emissiveIntensity:.35,metalness:0}),-.2,2.05,-3.47);
+  scene.add(room);
+}
+function applyTheme(){
+  if(!scene) return;
+  scene.background=col("--bg");floor.material.color=col("--panel2");
+  walls.forEach(w=>w.material.color=col("--panel"));gridLines.material.color=col("--line");
+}
+function makeStation(def,pos,lv){
+  const group=new T.Group();group.userData.sid=def.id;
+  group.position.set(pos[0],0,pos[1]);group.rotation.y=pos[2]||0;
+  const r=Math.max(def.w,def.d)/2+.12;
+  const ring=new T.Mesh(new T.RingGeometry(r-.06,r,48),new T.MeshBasicMaterial({color:0xf2552c,transparent:true,opacity:.5,side:T.DoubleSide}));
+  ring.rotation.x=-Math.PI/2;ring.position.y=.01;ring.visible=false;group.add(ring);
+  const st={def,group,ring,level:lv||1,model:null};
+  setLevel(st,st.level);scene.add(group);return st;
+}
+function setLevel(st,lv){
+  st.level=lv;if(st.model) st.group.remove(st.model);
+  st.model=B[st.def.id](lv);st.group.add(st.model);
+}
+function footprint(st){const q=Math.round(st.group.rotation.y/(Math.PI/2))%2!==0;return q?[st.def.d,st.def.w]:[st.def.w,st.def.d]}
+function overlaps(st){
+  const [w,d]=footprint(st),p=st.group.position;
+  return stations.some(o=>{if(o===st)return false;const [w2,d2]=footprint(o),q=o.group.position;return Math.abs(p.x-q.x)<(w+w2)/2-.02&&Math.abs(p.z-q.z)<(d+d2)/2-.02});
+}
+function clampIn(st){
+  const [w,d]=footprint(st),p=st.group.position;
+  p.x=Math.max(-5+w/2,Math.min(5-w/2,p.x));p.z=Math.max(-3.5+d/2,Math.min(3.5-d/2,p.z));
+}
+
+window.initKitchen=function(){
+  if(inited) return;inited=true;
+  const canvas=$("#kcanvas"),stage=$("#kstage");
+  renderer=new T.WebGLRenderer({canvas,antialias:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+  renderer.outputEncoding=T.sRGBEncoding;
+  scene=new T.Scene();
+  camera=new T.PerspectiveCamera(38,1,.1,100);camera.position.copy(HOME.p);
+  controls=new T.OrbitControls(camera,canvas);controls.target.copy(HOME.t);
+  controls.enableDamping=true;controls.maxPolarAngle=1.4;controls.minDistance=2.5;controls.maxDistance=22;
+  scene.add(new T.HemisphereLight(0xffffff,0x667777,.75));
+  const sun=new T.DirectionalLight(0xffffff,.85);sun.position.set(4,9,6);sun.castShadow=true;
+  sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-7,right:7,top:7,bottom:-7});sun.shadow.bias=-.0005;scene.add(sun);
+  buildRoom();
+  const saved=load();
+  DEFS.forEach(def=>stations.push(makeStation(def,(saved&&saved.layout&&saved.layout[def.id])||DEFAULT[def.id],saved&&saved.levels&&saved.levels[def.id])));
+  applyTheme();
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",applyTheme);
+  new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  const resize=()=>{const r=stage.getBoundingClientRect();if(!r.width||!r.height)return;renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()};
+  new ResizeObserver(resize).observe(stage);resize();
+
+  canvas.addEventListener("pointerdown",onDown);
+  canvas.addEventListener("pointermove",onMove);
+  canvas.addEventListener("pointerup",onUp);
+  canvas.addEventListener("pointerleave",()=>{hovered=null;$("#ktip").hidden=true;canvas.style.cursor=""});
+  clock=new T.Clock();renderSide();loop();
+};
+
+function setPtr(e){const r=renderer.domElement.getBoundingClientRect();ptr.x=(e.clientX-r.left)/r.width*2-1;ptr.y=-(e.clientY-r.top)/r.height*2+1;ray.setFromCamera(ptr,camera)}
+function pick(e){
+  setPtr(e);const hits=ray.intersectObjects(stations.map(s=>s.group),true);
+  for(const h of hits){let o=h.object;while(o&&!o.userData.sid)o=o.parent;if(o&&h.object.geometry.type!=="RingGeometry")return stations.find(s=>s.group===o)}
+  return null;
+}
+function onDown(e){
+  if(!$("#kmodal").hidden) return;
+  down={x:e.clientX,y:e.clientY};
+  if(editing){
+    const st=pick(e);
+    if(st){selected=st;setPtr(e);ray.ray.intersectPlane(plane,hit);
+      drag={st,start:st.group.position.clone(),off:st.group.position.clone().sub(hit)};
+      controls.enabled=false;renderer.domElement.setPointerCapture(e.pointerId);renderSide();}
+  }
+}
+function onMove(e){
+  const tip=$("#ktip"),r=renderer.domElement.getBoundingClientRect();
+  if(drag){
+    setPtr(e);if(ray.ray.intersectPlane(plane,hit)){const p=hit.add(drag.off);
+      drag.st.group.position.set(Math.round(p.x*4)/4,0,Math.round(p.z*4)/4);clampIn(drag.st)}
+    tip.hidden=false;tip.textContent=overlaps(drag.st)?"Blocked: overlaps another station":drag.st.def.name;
+    tip.style.left=(e.clientX-r.left)+"px";tip.style.top=(e.clientY-r.top)+"px";return;
+  }
+  const st=pick(e);hovered=st;renderer.domElement.style.cursor=st?(editing?"grab":"pointer"):"";
+  if(st){tip.hidden=false;tip.textContent=`${st.def.name} · Lv ${st.level}`;tip.style.left=(e.clientX-r.left)+"px";tip.style.top=(e.clientY-r.top)+"px"}else tip.hidden=true;
+}
+function onUp(e){
+  if(drag){
+    if(overlaps(drag.st)) drag.st.group.position.copy(drag.start);
+    drag=null;controls.enabled=true;$("#ktip").hidden=true;save();return;
+  }
+  if(!down) return;
+  const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;
+  if(moved>5) return;
+  if(editing){selected=pick(e);renderSide();return}
+  const st=pick(e);if(st) focus(st);
+}
+
+function flyTo(p,t,dur=.75){tw={p0:camera.position.clone(),t0:controls.target.clone(),p1:p.clone(),t1:t.clone(),k:0,dur}}
+function focus(st){
+  if(editing) return;
+  returnView={p:camera.position.clone(),t:controls.target.clone()};
+  const t=st.group.position.clone().add(new T.Vector3(0,1,0));
+  const off=new T.Vector3(0,1.3,2.6).applyAxisAngle(new T.Vector3(0,1,0),st.group.rotation.y);
+  flyTo(t.clone().add(off),t);
+  setTimeout(()=>openModal(st),420);
+}
+function openModal(st){
+  modalSt=st;$("#kmodal").hidden=false;$("#khint").hidden=true;$("#ktip").hidden=true;
+  $("#kmTitle").textContent=st.def.name;
+  $("#kmEyebrow").innerHTML=`${st.def.cat} · <b>${TIER_NAME[st.level-1]}</b>`;
+  const d=st.def;
+  $("#kmDesc").innerHTML=`<p class="eyebrow">How it's used</p><p>${d.use}</p>
+    <dl class="kstat"><dt>Gestures</dt><dd>${d.how.join(" · ")}</dd><dt>Scored on</dt><dd>${d.scored}</dd></dl>`;
+  if(!iso) initIso();
+  $("#kmLv").value=st.level;updateLevelUI(true);
+  $("#kmClose").focus();
+}
+function closeModal(){
+  if($("#kmodal").hidden) return;
+  $("#kmodal").hidden=true;$("#khint").hidden=false;modalSt=null;
+  if(returnView) flyTo(returnView.p,returnView.t);
+  save();renderSide();
+}
+function updateLevelUI(resetCam){
+  const st=modalSt,lv=+$("#kmLv").value,d=st.def;
+  if(st.level!==lv) setLevel(st,lv);
+  setIso(d,lv,resetCam);
+  $("#kmEyebrow").innerHTML=`${d.cat} · <b>${TIER_NAME[lv-1]}</b>`;
+  $("#kmMock").innerHTML=mock(d,lv);
+  $("#kmLvls").innerHTML=d.levels.map((L,i)=>`<button data-lv="${i+1}" class="${i+1===lv?"on":""}"><b>LV ${i+1}</b>${L[0]}</button>`).join("");
+  const L=d.levels[lv-1];
+  $("#kmStat").innerHTML=`<dl class="kstat"><dt>Model</dt><dd>${L[0]}</dd><dt>Precision</dt><dd class="mono">${L[1]}</dd><dt>Unlocks</dt><dd>${L[2]}</dd><dt>Cost</dt><dd class="mono">${L[3]?L[3].toLocaleString("en-US")+" credits":"Starter kit"}</dd></dl>`;
+}
+$("#kmLv").addEventListener("input",()=>updateLevelUI(false));
+$("#kmLvls").addEventListener("click",e=>{const b=e.target.closest("[data-lv]");if(b){$("#kmLv").value=b.dataset.lv;updateLevelUI(false)}});
+$("#kmClose").addEventListener("click",closeModal);
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape") closeModal();
+  if((e.key==="r"||e.key==="R")&&editing&&selected&&!e.target.closest("input")) rotateSel();
+});
+
+function initIso(){
+  const c=$("#isoCanvas"),box_=$("#kmIso");
+  const r=new T.WebGLRenderer({canvas:c,antialias:true,alpha:true});r.setPixelRatio(Math.min(2,window.devicePixelRatio||1));r.outputEncoding=T.sRGBEncoding;
+  const s=new T.Scene();s.add(new T.HemisphereLight(0xffffff,0x556666,.9));
+  const dl=new T.DirectionalLight(0xffffff,.9);dl.position.set(3,5,4);s.add(dl);
+  const disc=new T.Mesh(new T.CircleGeometry(1.6,48),new T.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.08}));disc.rotation.x=-Math.PI/2;s.add(disc);
+  const cam=new T.PerspectiveCamera(34,1,.05,50);
+  const ctl=new T.OrbitControls(cam,c);ctl.autoRotate=true;ctl.autoRotateSpeed=2.4;ctl.enableDamping=true;ctl.enablePan=false;
+  iso={r,s,cam,ctl,model:null};
+  const rs=()=>{const b=box_.getBoundingClientRect();if(!b.width||!b.height)return;r.setSize(b.width,b.height,false);cam.aspect=b.width/b.height;cam.updateProjectionMatrix()};
+  new ResizeObserver(rs).observe(box_);rs();
+}
+function setIso(def,lv,reset){
+  if(iso.model) iso.s.remove(iso.model);
+  const m=B[def.id](lv);iso.s.add(m);iso.model=m;
+  if(reset){const b=new T.Box3().setFromObject(m),sz=b.getSize(new T.Vector3()),c=b.getCenter(new T.Vector3()),R=Math.max(sz.x,sz.y,sz.z);
+    iso.ctl.target.copy(c);iso.cam.position.set(c.x+R*1.1,c.y+R*.7,c.z+R*1.5);iso.ctl.update()}
+}
+
+function mockCenter(id,lv){
+  const hot=lv>=3?"#7FB4FF":"#F2552C";
+  switch(id){
+    case"pan":return `<ellipse cx="160" cy="118" rx="64" ry="13" fill="${hot}" opacity=".35"/><ellipse cx="160" cy="106" rx="62" ry="22" fill="#22312F"/><rect x="216" y="100" width="72" height="10" rx="4" fill="#22312F"/><ellipse cx="158" cy="104" rx="34" ry="11" fill="#fff"/><ellipse cx="158" cy="103" rx="11" ry="5" fill="#FFC533"/><path d="M120 60 q6 -10 0 -20 M160 56 q6 -10 0 -20 M196 60 q6 -10 0 -20" stroke="var(--muted)" fill="none"/>`;
+    case"board":return `<path d="M80 86 L240 86 L262 138 L58 138Z" fill="#C79A62" stroke="var(--ink)"/><rect x="96" y="102" width="86" height="18" rx="9" fill="#4CAF50" stroke="var(--ink)"/><path d="M150 102v18M160 102v18M170 102v18" stroke="var(--ink)" opacity=".5"/>${lv>=2?`<path d="M190 92 L206 134" stroke="#FF2A2A" stroke-width="1.5" stroke-dasharray="4 3"/>`:""}<path d="M196 94 L250 58" stroke="#C9D3D2" stroke-width="7" stroke-linecap="round"/><path d="M250 58 L266 48" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>`;
+    case"oven":return `<rect x="92" y="40" width="136" height="104" rx="6" fill="#7D8B8C" stroke="var(--ink)"/><rect x="106" y="62" width="108" height="62" rx="4" fill="${lv>=3?"#9D88FF":"#FF8A3D"}" opacity=".7"/><ellipse cx="160" cy="110" rx="30" ry="8" fill="#9B4A3A"/><polyline points="110,118 130,104 150,96 170,90 190,86 210,84" fill="none" stroke="#fff" stroke-width="1.5"/><circle cx="120" cy="51" r="5" fill="var(--panel)"/><circle cx="160" cy="51" r="5" fill="var(--panel)"/><circle cx="200" cy="51" r="5" fill="var(--panel)"/>`;
+    case"scale":return `<rect x="110" y="118" width="100" height="10" rx="2" fill="#C9D3D2" stroke="var(--ink)"/><rect x="118" y="128" width="84" height="18" rx="2" fill="#22312F"/><text x="160" y="141" text-anchor="middle" class="mk" style="fill:#3CC48E;font-size:10px">${["12 g","12.0 g","12.00 g","12.000 g"][lv-1]}</text><path d="M136 58 V116 H184 V58" fill="var(--panel)" stroke="var(--ink)" stroke-width="1.5"/><rect x="137" y="90" width="46" height="26" fill="#6A4BE0" opacity=".45"/><path d="M175 66h8M178 76h5M175 86h8" stroke="var(--ink)"/>${lv>=3?`<path d="M210 30 L176 60" stroke="var(--ink)" stroke-width="4"/><circle cx="176" cy="66" r="3" fill="#6A4BE0"/>`:""}`;
+    case"centrifuge":return `<ellipse cx="160" cy="112" rx="70" ry="22" fill="#7D8B8C" stroke="var(--ink)"/><ellipse cx="160" cy="106" rx="56" ry="15" fill="#FFF3C4"/><path d="M160 106 m-40 0 a40 10 0 1 0 80 0 a30 8 0 1 0 -60 0 a20 5 0 1 0 40 0" fill="none" stroke="${lv>=3?"#6A4BE0":"#C98F00"}" stroke-width="2"/><path d="M200 60 a40 40 0 0 1 20 30" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="none"/><text x="226" y="66" class="mk">↻</text>`;
+    case"cryo":return `<rect x="110" y="30" width="100" height="116" rx="18" fill="#BFE9FF" opacity=".35" stroke="var(--ink)"/><circle cx="160" cy="88" r="20" fill="#9FE8FF" opacity=".9"/>${[...Array(lv*3)].map((_,i)=>`<circle cx="${120+((i*37)%80)}" cy="${40+((i*53)%96)}" r="2.5" fill="#fff"/>`).join("")}<rect x="146" y="48" width="28" height="10" rx="2" fill="#4CAF50"/>`;
+    case"torch":return `<ellipse cx="160" cy="124" rx="50" ry="12" fill="#fff" stroke="var(--ink)"/><rect x="132" y="108" width="56" height="16" rx="5" fill="#9B4A3A"/><path d="M196 34 L172 74" stroke="var(--ink)" stroke-width="10" stroke-linecap="round"/><path d="M170 78 L150 108 L162 102 L166 112 L176 82Z" fill="${hot}" opacity=".9"/>`;
+    case"mitosis":return `<path d="M100 130 A60 60 0 0 1 220 130Z" fill="#BFE9FF" opacity=".35" stroke="var(--ink)"/>${[...Array(lv+1)].map((_,i)=>{const a=i/(lv+1)*Math.PI*2;return `<circle cx="${160+Math.cos(a)*26}" cy="${104+Math.sin(a)*12}" r="12" fill="#7BE07B" stroke="var(--ink)"/>`}).join("")}<rect x="96" y="128" width="128" height="10" rx="3" fill="#7D8B8C"/>`;
+    case"plating":return `<ellipse cx="160" cy="110" rx="80" ry="26" fill="#fff" stroke="var(--ink)"/><ellipse cx="160" cy="108" rx="54" ry="16" fill="none" stroke="var(--line)"/><circle cx="140" cy="106" r="10" fill="#F2552C"/><circle cx="164" cy="102" r="8" fill="#6A4BE0"/><circle cx="180" cy="112" r="6" fill="#3CC48E"/><path d="M230 40 L184 96 M238 46 L188 98" stroke="var(--ink)" stroke-width="2"/>${lv>=3?`<text x="160" y="56" text-anchor="middle" class="mk" style="fill:#6A4BE0">PREDICTED: SIZE ↑ GLOW</text>`:""}`;
+    case"pantry":return `${[44,76,108].map(y=>`<rect x="70" y="${y+22}" width="180" height="4" fill="#C9D3D2" stroke="var(--ink)" stroke-width=".5"/>`+[0,1,2,3,4,5].map(i=>`<rect x="${78+i*28}" y="${y}" width="18" height="22" rx="3" fill="${["#6A4BE0","#F2552C","#3CC48E","#FFC533","#7FB4FF","#9D88FF"][(i+y)%6]}" opacity=".8" stroke="var(--ink)" stroke-width=".5"/>`).join("")).join("")}<rect x="160" y="34" width="62" height="14" rx="3" fill="var(--ink)"/><text x="166" y="44" class="mk" style="fill:var(--bg)">HELIUM FLOUR</text>`;
+  }
+  return "";
+}
+function mock(def,lv){
+  const L=def.levels[lv-1],pct=[72,84,93,99][lv-1];
+  return `<svg viewBox="0 0 320 190" role="img" aria-label="In-game first-person view of the ${def.name}, level ${lv}">
+<rect width="320" height="190" fill="var(--panel)"/>
+<path d="M0 22H320M0 44H320M0 66H320M60 0V70M120 0V70M180 0V70M240 0V70" stroke="var(--line)" stroke-width=".6"/>
+<path d="M30 70 L290 70 L320 152 L0 152Z" fill="var(--line)" stroke="var(--ink)" stroke-width="1.2"/>
+${mockCenter(def.id,lv)}
+<path d="M34 190 L48 160 q3 -8 10 -6 l16 4 q6 2 2 8 l-8 10 L66 190Z" fill="var(--violet)" stroke="var(--ink)" opacity=".92"/>
+<path d="M286 190 L272 160 q-3 -8 -10 -6 l-16 4 q-6 2 -2 8 l8 10 L254 190Z" fill="var(--violet)" stroke="var(--ink)" opacity=".92"/>
+<g transform="rotate(3 282 20)"><rect x="252" y="6" width="62" height="30" rx="3" fill="var(--panel2)" stroke="var(--ink)"/><text x="258" y="18" class="mk">ORDER #3</text><text x="258" y="30" class="mk" style="fill:var(--accent)">⏱ 02:41</text></g>
+<rect x="8" y="8" width="78" height="16" rx="3" fill="var(--ink)"/><text x="14" y="19" class="mk" style="fill:var(--bg)">LV ${lv} · ${def.short}</text>
+<rect x="88" y="162" width="144" height="3" rx="1.5" fill="var(--line)"/><rect x="88" y="162" width="${1.44*pct}" height="3" rx="1.5" fill="var(--ok)"/>
+<rect x="88" y="168" width="144" height="18" rx="4" fill="var(--ink)"/>
+<text x="160" y="180" text-anchor="middle" class="mk" style="fill:var(--bg)">${def.verb} · ${L[4]} · ${pct}%</text>
+</svg>`;
+}
+
+function renderSide(){
+  $("#klist").innerHTML=stations.map(s=>`<button class="kitem ${editing&&s===selected?"sel":""}" data-k="${s.def.id}"><span class="kd" style="background:${hex(TIER[s.level-1])}"></span><b>${s.def.name}</b><em>Lv ${s.level}</em><small>${s.def.cat} · ${TIER_NAME[s.level-1]}</small></button>`).join("");
+  $("#kRot").hidden=!(editing&&selected);
+  $("#kmode").textContent=editing?(selected?`Moving: ${selected.def.name}. Drag it on the floor, press R or ⟳ to rotate. Red ring = blocked.`:"Edit mode: drag any station on the floor. Positions snap to 25 cm."):"Click a station in 3D or in the list to inspect it.";
+}
+function rotateSel(){if(!selected)return;const prev=selected.group.rotation.y;selected.group.rotation.y=(prev+Math.PI/2)%(Math.PI*2);clampIn(selected);if(overlaps(selected))selected.group.rotation.y=prev;save()}
+$("#klist").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(!b||!inited)return;const st=stations.find(s=>s.def.id===b.dataset.k);if(editing){selected=st;renderSide()}else focus(st)});
+$("#kEdit").addEventListener("click",()=>{if(!inited)return;editing=!editing;$("#kEdit").setAttribute("aria-pressed",editing);$("#kEdit").textContent=editing?"✓ Done editing":"✎ Edit layout";$("#kstage").classList.toggle("editing",editing);if(!editing)selected=null;closeModal();renderSide()});
+$("#kRot").addEventListener("click",rotateSel);
+$("#kReset").addEventListener("click",()=>{if(!inited)return;stations.forEach(s=>{const p=DEFAULT[s.def.id];s.group.position.set(p[0],0,p[1]);s.group.rotation.y=p[2]});save();flyTo(HOME.p,HOME.t)});
+
+function loop(){
+  requestAnimationFrame(loop);
+  if($("#v-kitchen").hidden) return;
+  const dt=Math.min(.05,clock.getDelta());
+  if(tw){tw.k=Math.min(1,tw.k+dt/tw.dur);const e=1-Math.pow(1-tw.k,3);camera.position.lerpVectors(tw.p0,tw.p1,e);controls.target.lerpVectors(tw.t0,tw.t1,e);if(tw.k>=1)tw=null}
+  const accent=col("--accent"),bad=col("--bad");
+  stations.forEach(s=>{
+    const isSel=editing&&s===selected,blocked=editing&&overlaps(s);
+    s.ring.visible=editing||s===hovered||s===modalSt;
+    s.ring.material.color=blocked?bad:accent;
+    s.ring.material.opacity=isSel||s===hovered||s===modalSt?.95:.35;
+  });
+  const spin=o=>{if(o.userData.spin)o.rotation[o.userData.spin.axis]+=o.userData.spin.v*dt};
+  scene.traverse(spin);
+  controls.update();renderer.render(scene,camera);
+  if(modalSt&&iso){iso.s.traverse(spin);iso.ctl.update();iso.r.render(iso.s,iso.cam)}
+}
+if(location.hash==="#kitchen") window.initKitchen();
+})();
+</script>
+
+</body></html>
