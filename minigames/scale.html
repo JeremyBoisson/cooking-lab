@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Precision scale</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Precision scale · WEIGH
+   Click = one drip, hold = pour (flow accelerates). Material lands after a short fall and the display
+   settles with a lag, so overshoot happens after you let go — and can't be undone.
+   Right-click = tare. Space (or the LOCK button) locks the current dose and moves to the next. */
+const NOZ={x:560,y:118},BEAK={x:560,y:395,w:120,h:150},DISP={x:560,y:500},LOCKB={x:740,y:470,w:120,h:44};
+const VARS=[
+ {id:'spice',name:'Splitting spice',kind:'Powder',desc:'Fine and fast. Easy to overshoot when pouring.',icon:'🧂',col:'#9D88FF',drip:.1,pour:4,lag:.35,jit:0,fall:1,lo:2,hi:8,grain:0},
+ {id:'rum',name:'Ionized rum',kind:'Liquid',desc:'Big drips, quick stream.',icon:'🥃',col:'#F2852C',drip:.25,pour:9,lag:.5,jit:0,fall:1,lo:8,hi:25,grain:0},
+ {id:'flour',name:'Helium flour',kind:'Floaty powder',desc:'It floats: the display wobbles.',icon:'🎈',col:'#E8F3FF',drip:.15,pour:6,lag:.6,jit:.18,fall:.55,lo:5,hi:15,grain:0},
+ {id:'sauce',name:'Nebula sauce',kind:'Thick liquid',desc:'Slow, heavy drops and a sluggish display.',icon:'🌌',col:'#7B5CFF',drip:.4,pour:7,lag:.85,jit:0,fall:.6,lo:10,hi:30,grain:0},
+ {id:'sugar',name:'Sugar crystals',kind:'Granular',desc:'Chunky grains: every drip is a different size.',icon:'💎',col:'#C8F7FF',drip:.3,pour:5,lag:.4,jit:0,fall:1.1,lo:3,hi:12,grain:1},
+];
+let S=null;
+const fmt=g=>g.toFixed(1)+' g';
+MG.create({
+  id:'scale',name:'Precision scale',verb:'WEIGH',plateLabel:'PRECISION SCALE · 0.1 g',
+  menuTitle:'Pick an ingredient to dose',
+  intro:'Dose each target weight into the beaker. Click to drip, hold to pour. Material is still falling when you let go, and the display lags behind: stop early. Right-click to tare, Space to lock a dose.',
+  keys:'<kbd>Click</kbd> drip · <kbd>Hold</kbd> pour · <kbd>Right-click</kbd> tare · <kbd>Space</kbd> lock dose',
+  variants:VARS,
+  order(v,rand,K){const n=1+Math.floor(rand()*K.T.maxDoses),t=[];for(let i=0;i<n;i++)t.push(Math.round((v.lo+rand()*(v.hi-v.lo))*10)/10);
+    return{units:n,targets:t,title:`${n} dose${n>1?'s':''} of ${v.name}`,subtitle:t.map(fmt).join(' · '),chip:t.map(fmt).join(' + '),label:'Dose target'}},
+  start(K,o){if(S&&S.snd)S.snd.stop();const v=o.variant;S={v,i:0,mass:0,tare:0,shown:0,doseStart:0,doses:o.targets.map(t=>({t,got:null})),drops:[],press:false,pressT:0,pouring:false,holdT:0,cap:o.targets.reduce((a,b)=>a+b,0)*1.35,snd:null,flash:0}},
+  stop(K){if(S&&S.snd){S.snd.stop();S.snd=null}},
+  down(K,x,y,e){
+    if(e.button===2){tare(K);return}
+    if(x>LOCKB.x&&x<LOCKB.x+LOCKB.w&&y>LOCKB.y&&y<LOCKB.y+LOCKB.h){lock(K);return}
+    S.press=true;S.pressT=0},
+  up(K){if(!S.press)return;S.press=false;if(!S.pouring)drip(K);S.pouring=false;S.holdT=0;if(S.snd){S.snd.stop();S.snd=null}},
+  key(K,k,down){if(down&&(k===' '||k==='n')){lock(K);return true}if(down&&k==='t'){tare(K);return true}},
+  update(K,dt){if(!S)return;const v=S.v;
+    if(S.press&&K.playing){S.pressT+=dt;if(!S.pouring&&S.pressT>.18){S.pouring=true;S.holdT=0;S.snd=K.sfx.loop('noise',600,'lowpass')}
+      if(S.pouring){S.holdT+=dt;const f=Math.min(1,S.holdT/K.T.accel),rate=v.pour*(.08+.92*f*f);
+        let m=rate*dt;if(v.grain)m*=.4+Math.random()*1.2;S.drops.push({x:NOZ.x+(Math.random()-.5)*4,y:NOZ.y+20,vy:120,m,r:2+f*2});if(S.snd)S.snd.set(.05+.12*f,400+900*f)}}
+    const surf=surface();
+    for(let i=S.drops.length-1;i>=0;i--){const d=S.drops[i];d.vy+=900*v.fall*dt;d.y+=d.vy*dt;
+      if(d.y>=surf){S.drops.splice(i,1);S.mass+=d.m;if(d.m>.05&&Math.random()<.5)K.burst(d.x,surf,{n:3,col:v.col,spd:60,life:.3,r:1.5,dir:-Math.PI/2,spread:1.6,grav:300})}}
+    const tgt=S.mass-S.tare,k=1-Math.exp(-dt/Math.max(.01,v.lag*K.T.lag));S.shown+=(tgt-S.shown)*k;S.flash=Math.max(0,S.flash-dt)},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v;
+    // dispenser
+    D.box(g,NOZ.x-60,40,120,62,10,{fill:'#0f2a32',stroke:C.cyan,glow:C.cyan});D.text(g,v.name.toUpperCase(),NOZ.x,60,{font:'600 10px "IBM Plex Mono", monospace',col:C.cyan2});
+    g.fillStyle=v.col;g.globalAlpha=.85;g.fillRect(NOZ.x-44,72,88,18);g.globalAlpha=1;
+    D.box(g,NOZ.x-10,100,20,20,4,{fill:'#16353e',stroke:C.cyan});
+    // stream & drops
+    if(S.pouring&&S.drops.length){g.save();g.strokeStyle=v.col;g.globalAlpha=.75;g.lineWidth=2+Math.min(1,S.holdT/K.T.accel)*4;g.shadowColor=v.col;g.shadowBlur=10;g.beginPath();g.moveTo(NOZ.x,NOZ.y+20);g.lineTo(NOZ.x,surface());g.stroke();g.restore()}
+    for(const d of S.drops){g.fillStyle=v.col;g.beginPath();g.ellipse(d.x,d.y,d.r,d.r*1.4,0,0,K.TAU);g.fill()}
+    // beaker
+    const b=BEAK,lvl=Math.min(1,S.mass/S.cap),top=b.y-b.h;
+    g.save();g.beginPath();g.roundRect(b.x-b.w/2,top,b.w,b.h,[4,4,14,14]);g.fillStyle='rgba(127,243,255,.06)';g.fill();g.clip();
+    const fy=b.y-lvl*b.h;const lg=g.createLinearGradient(0,fy,0,b.y);lg.addColorStop(0,v.col);lg.addColorStop(1,'rgba(0,0,0,.4)');g.fillStyle=lg;g.globalAlpha=.85;g.fillRect(b.x-b.w/2,fy+Math.sin(now/300)*1.5,b.w,b.h);g.restore();
+    D.box(g,b.x-b.w/2,top,b.w,b.h,[4,4,14,14],{stroke:'rgba(190,250,255,.7)',lw:2,glow:C.cyan});
+    for(let i=1;i<6;i++){const y=b.y-i*b.h/6;g.strokeStyle='rgba(190,250,255,.35)';g.beginPath();g.moveTo(b.x-b.w/2,y);g.lineTo(b.x-b.w/2+14,y);g.stroke()}
+    // scale body + display
+    D.box(g,b.x-120,b.y,240,16,6,{fill:'#1d3b44',stroke:C.cyan});
+    D.box(g,DISP.x-120,DISP.y-24,240,52,10,{fill:'#04100f',stroke:S.flash?C.ok:C.cyan,glow:S.flash?C.ok:C.cyan});
+    const jit=v.jit?Math.sin(now/90)*v.jit+Math.sin(now/37)*v.jit*.5:0,read=Math.round((S.shown+jit)*10)/10;
+    D.text(g,(read<0?'−':'')+Math.abs(read).toFixed(1)+' g',DISP.x+60,DISP.y+2,{font:'700 34px "IBM Plex Mono", monospace',align:'right',col:'#B9FFDF',glow:'#3CC48E'});
+    D.text(g,S.tare?'TARE':'',DISP.x-104,DISP.y-8,{font:'600 10px "IBM Plex Mono", monospace',align:'left',col:C.warn});
+    D.text(g,S.drops.length?'~':'■',DISP.x-104,DISP.y+12,{font:'600 11px "IBM Plex Mono", monospace',align:'left',col:S.drops.length?C.warn:C.ok});
+    // dose list
+    const lx=720;D.text(g,'DOSES',lx,140,{align:'left',font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});
+    S.doses.forEach((d,i)=>{const y=168+i*44,cur=i===S.i;D.box(g,lx,y-16,140,36,8,{fill:cur?'rgba(63,224,255,.12)':'rgba(6,18,22,.7)',stroke:cur?C.cyan:'rgba(127,243,255,.25)'});
+      D.text(g,fmt(d.t),lx+10,y-4,{align:'left',font:'700 15px "IBM Plex Mono", monospace'});
+      if(d.got!=null){const e=d.got-d.t,col=Math.abs(e)<=K.T.tol?C.ok:Math.abs(e)<=K.T.tol*3?C.warn:C.bad;D.text(g,(e>=0?'+':'−')+Math.abs(e).toFixed(2),lx+130,y-4,{align:'right',font:'600 12px "IBM Plex Mono", monospace',col})}
+      else if(cur)D.text(g,'pouring',lx+130,y-4,{align:'right',font:'500 11px "IBM Plex Mono", monospace',col:C.dim});
+      D.text(g,d.got!=null?'got '+fmt(d.got):'',lx+10,y+11,{align:'left',font:'500 10px "IBM Plex Mono", monospace',col:C.dim})});
+    D.box(g,LOCKB.x,LOCKB.y,LOCKB.w,LOCKB.h,10,{fill:'rgba(255,110,74,.18)',stroke:C.accent,glow:C.accent});D.text(g,'LOCK DOSE',LOCKB.x+LOCKB.w/2,LOCKB.y+16,{font:'700 13px "IBM Plex Mono", monospace',col:'#FFD9CC'});D.text(g,'space',LOCKB.x+LOCKB.w/2,LOCKB.y+32,{font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    K.hint(K.playing?'click = drip · hold = pour · right-click = tare · space = lock dose':'')},
+  panel(K){if(!S)return{};const d=S.doses[Math.min(S.i,S.doses.length-1)];
+    return{big:fmt(d.t)+` <small>${Math.min(S.i+1,S.doses.length)}/${S.doses.length}</small>`,sub:`this dose: ${(S.mass-S.doseStart).toFixed(1)} g in beaker`,
+      slots:S.doses.map(d=>d.got==null?'':Math.abs(d.got-d.t)<=K.T.tol?'ok':Math.abs(d.got-d.t)<=K.T.tol*3?'warn':'')}},
+  evaluate(K){if(S.i<S.doses.length&&S.mass-S.doseStart>0.05){settle();S.doses[S.i].got=S.mass-S.doseStart}
+    const tol=K.T.tol,sc=S.doses.map(d=>d.got==null?0:Math.max(0,1-Math.max(0,Math.abs(d.got-d.t)-tol)/(tol*9)));
+    return{score:100*sc.reduce((a,b)=>a+b,0)/sc.length,
+      lines:S.doses.map((d,i)=>[`Dose ${i+1} · ${fmt(d.t)}`,d.got==null?'missing':`${fmt(d.got)} (${d.got>=d.t?'+':'−'}${Math.abs(d.got-d.t).toFixed(2)})`]),
+      bars:{items:S.doses.map(d=>({v:d.got==null?0:d.got/d.t*100,label:d.got==null?'—':fmt(d.got),cls:d.got==null?'bad':Math.abs(d.got-d.t)<=tol?'ok':Math.abs(d.got-d.t)<=tol*3?'warn':'bad'})),target:100,max:130,tlabel:'target'},
+      note:`Perfect within ±${tol.toFixed(2)} g. Overshoot counts the same as undershoot.`}},
+});
+function surface(){return BEAK.y-Math.min(1,S.mass/S.cap)*BEAK.h}
+function settle(){for(const d of S.drops)S.mass+=d.m;S.drops.length=0}
+function drip(K){const v=S.v,m=v.grain?v.drip*(.2+Math.random()*1.8):v.drip*(.85+Math.random()*.3);S.drops.push({x:NOZ.x,y:NOZ.y+20,vy:60,m,r:3+m*3});K.sfx.tone(900+Math.random()*300,.05,.08,'sine',500)}
+function tare(K){S.tare=S.mass;S.shown=S.mass-S.tare+(S.shown-(S.mass-S.tare));K.sfx.click();K.toast('Tared');}
+function lock(K){if(!K.playing||S.i>=S.doses.length)return;settle();const d=S.doses[S.i];d.got=S.mass-S.doseStart;S.doseStart=S.mass;S.i++;S.flash=.3;
+  const e=Math.abs(d.got-d.t);if(e<=K.T.tol){K.sfx.good();K.toast('Perfect dose')}else if(e<=K.T.tol*3)K.sfx.pop();else{K.sfx.bad();K.shake(4)}
+  if(K.T.autoTare)S.tare=S.mass;
+  if(S.i>=S.doses.length){K.state='ending';setTimeout(()=>K.finish('done'),500)}}
+</script>
+</body>
+</html>

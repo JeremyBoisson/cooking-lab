@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ingredient pantry</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Ingredient pantry · PICK
+   The ticket (top-left) lists ingredients with a required batch. Hover a jar to magnify its label
+   (name, batch, expiry). Click to drop it in the tray. Watch for look-alike names, wrong batches and
+   expired jars. Click a jar in the tray to put it back (the wrong grab still counts). */
+const SH={x:300,y:70,w:570,h:350},TRAY={x:300,y:440,w:440,h:70};
+const POOL=[['Phase-shifted egg','#FFF3D6'],['Plasma butter','#FFC533'],['Cryo-chives','#4CAF50'],['Moon potato','#E8D3A2'],['Helium flour','#F4F4F0'],['Nebula sauce','#7B5CFF'],
+ ['Chlorophyll leaves','#3CC48E'],['UV croutons','#E0A040'],['Ionized rum','#D9822B'],['Caramel lattice','#C98F00'],['Splitting spice','#9D88FF'],['Tomato plasma','#E8473B'],
+ ['Time-crystal garnish','#6FE0FF'],['Gel spheres','#FF8FB1'],['Glow-shroom','#5FD0F0'],['Nitro berries','#D6336C'],['Quark herbs','#2E9E5B'],['Tahini fog','#EADFC8'],
+ ['Magnet berries','#3B6FE0'],['Sun-ray juice','#FFD23F'],['Mineral ice','#BFE9FF'],['Static salsa','#E8573B'],['Cryo dust','#7FE8FF'],['Pollen parmesan','#FFD84D'],['Comet sauce','#D63380']];
+const VARS=[
+ {id:'open',name:'Open shelves',kind:'3 × 6 · 3 items',desc:'Starter pantry. Few decoys.',icon:'🗄️',rows:3,cols:6,items:3,extra:0},
+ {id:'cabinet',name:'Sealed cabinet',kind:'3 × 7 · 4 items',desc:'More jars, wrong batches mixed in.',icon:'🧊',rows:3,cols:7,items:4,extra:1},
+ {id:'stasis',name:'Stasis pantry',kind:'4 × 8 · 5 items',desc:'Look-alike names everywhere.',icon:'✨',rows:4,cols:8,items:5,extra:1},
+ {id:'spice',name:'Spice wall',kind:'4 × 9 · 4 items',desc:'Tiny jars, similar colours, expired twins.',icon:'🧂',rows:4,cols:9,items:4,extra:2},
+];
+let S=null;
+function lookalike(name,rand){const w=name.split(/([ -])/),r=rand();
+  if(r<.33)return name.endsWith('s')?name.slice(0,-1):name+'s';
+  if(r<.66){const i=w[0].length>3?1+Math.floor(rand()*(w[0].length-2)):0;const a=w[0].split('');[a[i],a[i+1]]=[a[i+1],a[i]];w[0]=a.join('');return w.join('')}
+  return name+' lite'}
+MG.create({
+  id:'pantry',name:'Ingredient pantry',verb:'PICK',plateLabel:'PANTRY · BATCH TRACKING',
+  menuTitle:'Pick a pantry',
+  intro:'The ticket lists ingredients and their batch. Hover a jar to read its label, click to drop it in the tray. Watch out for look-alike names, wrong batches and expired jars (EXP). Click a jar in the tray to put it back.',
+  keys:'<kbd>Hover</kbd> read label · <kbd>Click</kbd> grab / put back',
+  variants:VARS,
+  order(v,rand,K){const pool=[...POOL].sort(()=>rand()-.5),items=pool.slice(0,v.items).map(([n,c])=>({n,c,b:10+Math.floor(rand()*89)}));
+    const lv=Math.min(3,K.T.look+v.extra),jars=[];
+    items.forEach(it=>{jars.push({n:it.n,c:it.c,b:it.b,exp:false,ok:true});
+      if(lv>=1)jars.push({n:it.n,c:it.c,b:+String(it.b).split('').reverse().join('')===it.b?it.b+1:+String(it.b).split('').reverse().join(''),exp:false});
+      if(lv>=2)jars.push({n:lookalike(it.n,rand),c:it.c,b:it.b,exp:false});
+      if(lv>=3)jars.push({n:it.n,c:it.c,b:it.b,exp:true})});
+    const fill=pool.slice(v.items);let k=0;while(jars.length<v.rows*v.cols){const[n,c]=fill[k++%fill.length];jars.push({n,c,b:10+Math.floor(rand()*89),exp:rand()<.15})}
+    jars.sort(()=>rand()-.5);jars.forEach(j=>{j.d=j.exp?0:1+Math.floor(rand()*9)});
+    return{units:v.items,items,jars,title:`${v.items} ingredients`,subtitle:v.name,chip:`${v.items} items`,label:'Ticket'}},
+  start(K,o){const v=o.variant,cw=SH.w/v.cols,rh=SH.h/v.rows;S={v,o,cw,rh,items:o.items.map(i=>({...i,got:false})),jars:o.jars.map((j,i)=>({...j,i,row:Math.floor(i/v.cols),col:i%v.cols,inTray:false,shake:0})),tray:[],wrong:0,hover:null,done:false}},
+  down(K,x,y){const t=trayHit(x,y);if(t){t.inTray=false;S.tray=S.tray.filter(j=>j!==t);K.sfx.pop();return}
+    const j=jarHit(x,y);if(!j)return;grab(K,j)},
+  update(K,dt){if(!S)return;for(const j of S.jars)j.shake=Math.max(0,j.shake-dt*3)},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v;
+    // shelves
+    for(let r=0;r<v.rows;r++){const y=SH.y+(r+1)*S.rh-6;g.save();g.shadowColor=C.cyan;g.shadowBlur=10;g.fillStyle='#1d3c46';g.fillRect(SH.x-8,y,SH.w+16,8);g.restore();g.fillStyle='rgba(127,243,255,.4)';g.fillRect(SH.x-8,y,SH.w+16,1.5)}
+    S.hover=K.playing?jarHit(K.mouse.x,K.mouse.y):null;
+    for(const j of S.jars){if(j.inTray)continue;const x=SH.x+j.col*S.cw+S.cw/2+Math.sin(now/30)*j.shake*4,y=SH.y+(j.row+1)*S.rh-8;jar(g,K,j,x,y,Math.min(S.cw*.7,S.rh*.5),j===S.hover)}
+    // tray
+    D.box(g,TRAY.x,TRAY.y,TRAY.w,TRAY.h,12,{fill:'rgba(6,18,22,.85)',stroke:'rgba(127,243,255,.4)'});D.text(g,'PREP TRAY',TRAY.x+10,TRAY.y-10,{align:'left',font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});
+    S.tray.forEach((j,i)=>{const x=TRAY.x+30+i*44,y=TRAY.y+TRAY.h-10;jar(g,K,j,x,y,28,false);D.text(g,j.good?'✓':'✗',x,TRAY.y+12,{font:'700 14px "IBM Plex Mono", monospace',col:j.good?C.ok:C.bad})});
+    // magnifier
+    if(S.hover&&K.T.magnifier){const j=S.hover,mx=Math.min(K.mouse.x+18,700),my=Math.max(80,K.mouse.y-120);D.box(g,mx,my,170,92,10,{fill:'rgba(6,18,22,.95)',stroke:j.c,glow:j.c});
+      g.fillStyle=j.c;g.fillRect(mx,my+10,6,72);D.text(g,j.n,mx+16,my+22,{align:'left',font:'700 14px "IBM Plex Sans", sans-serif'});
+      D.text(g,`BATCH  B-${j.b}`,mx+16,my+46,{align:'left',font:'600 12px "IBM Plex Mono", monospace',col:C.cyan2});
+      D.text(g,j.exp?'EXPIRED':`EXPIRES  D+${j.d}`,mx+16,my+68,{align:'left',font:'600 12px "IBM Plex Mono", monospace',col:j.exp?C.bad:C.ok})}
+    K.hint(K.playing?'hover = read label · click = grab · click tray jar = put back':'')},
+  panel(K){if(!S)return{};return{big:`${S.items.filter(i=>i.got).length}/${S.items.length} <small>picked</small>`,
+    sub:S.items.map(i=>`<div style="color:${i.got?'#3CC48E':'#E2F6FF'}">${i.got?'☑':'☐'} ${i.n} · B-${i.b}</div>`).join('')+(S.wrong?`<div style="color:#FF6370">✗ ${S.wrong} wrong grab${S.wrong>1?'s':''}</div>`:''),
+    slots:S.items.map(i=>i.got?'ok':'')}},
+  evaluate(K){const got=S.items.filter(i=>i.got).length,n=S.items.length;
+    return{score:100*got/n-10*S.wrong,lines:[['Correct picks',`${got}/${n}`],['Wrong grabs',S.wrong],...S.items.filter(i=>!i.got).map(i=>['Missing',`${i.n} · B-${i.b}`])],
+      bars:{items:S.items.map(i=>({v:i.got?100:0,label:i.n.split(/[ -]/)[0],cls:i.got?'ok':'bad'})),max:100},note:'Each wrong grab costs 10 points.'}},
+});
+function jar(g,K,j,x,y,s,hov){const C=K.C,w=s*.8,h=s;
+  g.save();if(hov){g.shadowColor=j.c;g.shadowBlur=18}
+  g.fillStyle='rgba(200,240,255,.12)';g.strokeStyle=hov?'#fff':'rgba(190,250,255,.6)';g.lineWidth=1.5;g.beginPath();g.roundRect(x-w/2,y-h,w,h,6);g.fill();g.stroke();g.shadowBlur=0;
+  g.fillStyle=j.c;g.globalAlpha=.85;g.beginPath();g.roundRect(x-w/2+3,y-h*.72,w-6,h*.72-3,4);g.fill();g.globalAlpha=1;
+  g.fillStyle='#5a6b73';g.fillRect(x-w/2-2,y-h-6,w+4,7);
+  g.fillStyle='rgba(6,18,22,.85)';g.fillRect(x-w/2+2,y-h*.55,w-4,h*.32);
+  const fs=Math.max(7,Math.min(10,s*.2));g.fillStyle=j.exp?C.bad:'#E2F6FF';g.font=`600 ${fs}px "IBM Plex Mono", monospace`;g.textAlign='center';g.textBaseline='middle';
+  if(K.T.labels){g.save();g.beginPath();g.rect(x-w/2+2,y-h*.55,w-4,h*.32);g.clip();g.fillText(j.n.split(/[ -]/)[0],x,y-h*.47);g.restore()}
+  g.fillText(j.exp?'EXP':'B-'+j.b,x,y-h*(K.T.labels?.31:.39));g.restore()}
+function jarHit(x,y){for(const j of S.jars){if(j.inTray)continue;const jx=SH.x+j.col*S.cw+S.cw/2,jy=SH.y+(j.row+1)*S.rh-8,s=Math.min(S.cw*.7,S.rh*.5);if(Math.abs(x-jx)<s*.45&&y<jy&&y>jy-s-8)return j}return null}
+function trayHit(x,y){if(y<TRAY.y||y>TRAY.y+TRAY.h)return null;for(let i=0;i<S.tray.length;i++){const jx=TRAY.x+30+i*44;if(Math.abs(x-jx)<18)return S.tray[i]}return null}
+function grab(K,j){if(S.tray.length>=9){K.toast('Tray is full: put something back');return}
+  const need=S.items.find(i=>!i.got&&i.n===j.n&&i.b===j.b&&!j.exp);j.inTray=true;S.tray.push(j);
+  if(need){need.got=true;j.good=true;K.sfx.good();K.burst(TRAY.x+30+(S.tray.length-1)*44,TRAY.y+20,{n:12,col:'#3CC48E',spd:120,life:.4});
+    if(S.items.every(i=>i.got)){K.state='ending';setTimeout(()=>K.finish('done'),500)}}
+  else{j.good=false;S.wrong++;K.sfx.bad();K.shake(4);K.toast(j.exp?'Expired!':S.items.some(i=>i.n===j.n)?'Wrong batch!':'Not on the ticket!')}}
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cryo chamber</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Cryo chamber · FREEZE
+   Hold the mouse (or Space) to lower the ingredient into the liquid nitrogen, release to lift it.
+   The core temperature keeps falling a little after you lift it (thermal lag). Lock it when the core
+   is in the target window. Staying too cold cracks it. Some items then need shattering into N shards. */
+const BATH={x:670,y:400,w:280,h:110},TOPY=170,GR={x:300,y:330,w:190,h:150},LOCKB={x:740,y:80,w:120,h:44};
+const VARS=[
+ {id:'chives',name:'Cryo-chives',kind:'Small · fast',desc:'Freezes in a blink. Tap, don\'t hold.',icon:'🌿',col:'#4CAF50',k:.9,lo:-60,hi:-20,size:.6},
+ {id:'berries',name:'Nitro berries',kind:'Medium',desc:'A steady freeze with a little lag.',icon:'🫐',col:'#D6336C',k:.45,lo:-80,hi:-40,size:.8},
+ {id:'ice',name:'Mineral ice',kind:'Shatter',desc:'Freeze it, then tap to shatter into the right number of shards.',icon:'💠',col:'#BFE9FF',k:.5,lo:-120,hi:-80,size:.8,shards:1},
+ {id:'custard',name:'Vanilla custard',kind:'Large · slow',desc:'Big and slow, with a long thermal lag.',icon:'🍮',col:'#FFE9A8',k:.18,lo:-40,hi:-15,size:1.1},
+ {id:'cream',name:'Dark-matter ice cream',kind:'Large · narrow window',desc:'Slow freeze, very tight window.',icon:'🍨',col:'#4A3A8B',k:.22,lo:-150,hi:-110,size:1,tight:.6},
+];
+let S=null;
+const fmtT=t=>(t<0?'−':'')+Math.abs(t).toFixed(0)+' °C';
+MG.create({
+  id:'cryo',name:'Cryo chamber',verb:'FREEZE',plateLabel:'CRYO CHAMBER · LN₂ −196 °C',
+  menuTitle:'Pick an ingredient to freeze',
+  intro:'Hold to dip the ingredient into the liquid nitrogen, release to lift it. The core keeps cooling a bit after you lift it. Lock it when the core is in the target window; staying too cold cracks it.',
+  keys:'<kbd>Hold</kbd> or <kbd>Space</kbd> dip · <kbd>L</kbd> lock · <kbd>Click</kbd> shatter',
+  variants:VARS,
+  order(v,rand,K){const n=1+Math.floor(rand()*K.T.maxItems),it=[];
+    for(let i=0;i<n;i++){const w=(v.hi-v.lo)*(v.tight||1)*.3,c=Math.round(v.lo+w+rand()*(v.hi-v.lo-2*w)),sh=v.shards?3+Math.floor(rand()*4):0;it.push({lo:c-Math.round(w/2),hi:c+Math.round(w/2),sh})}
+    return{units:n,items:it,title:`${n} × ${v.name}`,subtitle:it.map(t=>`${fmtT(t.lo)} … ${fmtT(t.hi)}${t.sh?` · ${t.sh} shards`:''}`).join(' · '),chip:it.map(t=>fmtT((t.lo+t.hi)/2)).join(' · '),label:'Core target'}},
+  start(K,o){if(S&&S.snd)S.snd.stop();S={v:o.variant,items:o.items.map(t=>({...t,got:null,crack:0,shards:0})),i:0,T:20,depth:0,dip:false,crack:0,hist:[],histT:0,phase:'freeze',shards:0,snd:null,fog:0}},
+  stop(){if(S&&S.snd){S.snd.stop();S.snd=null}},
+  down(K,x,y){if(x>LOCKB.x&&x<LOCKB.x+LOCKB.w&&y>LOCKB.y&&y<LOCKB.y+LOCKB.h){lock(K);return}
+    if(S.phase==='shatter'){shatter(K,x,y);return}S.dip=true},
+  up(){S.dip=false},
+  key(K,k,down){if(k===' '){if(S.phase==='freeze')S.dip=down;else if(down)shatter(K,600,300);return true}if(down&&k==='l'){lock(K);return true}},
+  update(K,dt){if(!S)return;const v=S.v,it=S.items[S.i];
+    S.depth+=((S.dip&&K.playing&&S.phase==='freeze'?1:0)-S.depth)*(1-Math.exp(-dt*9));
+    // surface temperature follows bath when submerged, air when lifted; core follows surface with lag
+    const sub=S.depth>.55,env=sub?-196:20,k=v.k*K.T.speed;
+    S.surf=(S.surf??20)+(env-(S.surf??20))*(1-Math.exp(-dt*k*(sub?3:.25)));
+    S.T+=(S.surf-S.T)*(1-Math.exp(-dt*k*(sub?1:.6)));
+    if(it&&K.playing&&S.phase==='freeze'&&S.T<it.lo){S.crack=Math.min(1,S.crack+dt*(it.lo-S.T)/60*K.T.crack);if(S.crack>=1&&!S.cracked){S.cracked=true;K.sfx.bad();K.shake(6);K.toast('Cracked!')}}
+    if(S.snd)S.snd.set(sub?.08:0,sub?1400:900);else if(sub&&K.playing)S.snd=K.sfx.loop('noise',1400,'highpass');
+    if(sub&&Math.random()<dt*30)K.burst(BATH.x+(Math.random()-.5)*80,BATH.y-BATH.h/2,{n:2,col:'rgba(200,240,255,.6)',spd:40,dir:-Math.PI/2,spread:1,life:1.2,r:5});
+    if((S.histT+=dt)>.05){S.histT=0;S.hist.push(S.T);if(S.hist.length>200)S.hist.shift()}},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v,it=S.items[Math.min(S.i,S.items.length-1)];
+    // bath
+    const b=BATH;D.box(g,b.x-b.w/2,b.y-b.h/2,b.w,b.h+30,16,{fill:'#0b2230',stroke:C.cyan,glow:C.cyan});
+    const lg=g.createLinearGradient(0,b.y-b.h/2,0,b.y+b.h/2);lg.addColorStop(0,'rgba(140,220,255,.55)');lg.addColorStop(1,'rgba(40,90,160,.35)');g.fillStyle=lg;g.fillRect(b.x-b.w/2+6,b.y-b.h/2+14+Math.sin(now/400)*2,b.w-12,b.h);
+    for(let i=0;i<6;i++){g.fillStyle='rgba(220,245,255,.06)';g.beginPath();g.ellipse(b.x-110+i*44+Math.sin(now/700+i)*10,b.y-b.h/2+6,40,12,0,0,K.TAU);g.fill()}
+    // claw + item
+    const iy=TOPY+S.depth*(b.y-TOPY-10);g.strokeStyle='rgba(200,240,255,.8)';g.lineWidth=3;g.beginPath();g.moveTo(b.x,60);g.lineTo(b.x,iy-30*v.size);g.stroke();
+    D.box(g,b.x-26,iy-34*v.size-6,52,10,4,{fill:'#16353e',stroke:C.cyan});
+    const frost=Math.max(0,Math.min(1,(20-S.T)/150)),r=30*v.size;
+    g.save();g.shadowColor=frost>.4?'#BFF6FF':v.col;g.shadowBlur=12+frost*20;g.fillStyle=v.col;g.beginPath();g.arc(b.x,iy,r,0,K.TAU);g.fill();
+    g.globalAlpha=frost*.85;g.fillStyle='#E9FDFF';g.beginPath();g.arc(b.x,iy,r,0,K.TAU);g.fill();g.restore();
+    if(S.crack>.05){g.save();g.strokeStyle=`rgba(255,99,112,${.3+S.crack*.7})`;g.lineWidth=1.5;const n=Math.ceil(S.crack*7);for(let i=0;i<n;i++){const a=i*2.4;g.beginPath();g.moveTo(b.x,iy);g.lineTo(b.x+Math.cos(a)*r*.6,iy+Math.sin(a)*r*.6);g.lineTo(b.x+Math.cos(a+.4)*r,iy+Math.sin(a+.4)*r);g.stroke()}g.restore()}
+    if(S.phase==='shatter'){for(let i=0;i<S.shards;i++){const a=i/Math.max(1,S.shards)*K.TAU+now/2000;g.fillStyle='#E9FDFF';g.globalAlpha=.8;g.beginPath();g.moveTo(b.x+Math.cos(a)*(r+20),iy+Math.sin(a)*(r+20));g.lineTo(b.x+Math.cos(a+.2)*(r+34),iy+Math.sin(a+.2)*(r+34));g.lineTo(b.x+Math.cos(a-.15)*(r+30),iy+Math.sin(a-.15)*(r+30));g.fill()}g.globalAlpha=1;
+      D.text(g,`TAP TO SHATTER · ${S.shards}/${it.sh}`,b.x,iy+r+44,{font:'700 16px "IBM Plex Mono", monospace',col:C.cyan2,glow:C.cyan})}
+    // core readout + graph
+    const inW=S.T>=it.lo&&S.T<=it.hi;
+    D.box(g,GR.x-10,GR.y-70,GR.w+20,GR.h+90,10,{fill:'rgba(6,18,22,.85)',stroke:'rgba(127,243,255,.35)'});
+    D.text(g,'CORE',GR.x,GR.y-52,{align:'left',font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});
+    D.text(g,fmtT(S.T),GR.x+GR.w,GR.y-40,{align:'right',font:'700 30px "IBM Plex Mono", monospace',col:inW?'#B9FFDF':C.ink,glow:inW?C.ok:C.cyan});
+    const Y=t=>GR.y+GR.h-(t+200)/220*GR.h;g.fillStyle='rgba(60,196,142,.2)';g.fillRect(GR.x,Y(it.hi),GR.w,Y(it.lo)-Y(it.hi));g.strokeStyle=C.ok;g.strokeRect(GR.x,Y(it.hi),GR.w,Y(it.lo)-Y(it.hi));
+    D.line(g,S.hist.map((t,i)=>[GR.x+i/200*GR.w,Y(t)]),C.cyan,2,C.cyan);
+    D.text(g,'crack',GR.x,GR.y+GR.h+12,{align:'left',font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    g.fillStyle='rgba(255,99,112,.15)';g.fillRect(GR.x+40,GR.y+GR.h+8,GR.w-40,8);g.fillStyle=C.bad;g.fillRect(GR.x+40,GR.y+GR.h+8,(GR.w-40)*S.crack,8);
+    // items + lock
+    S.items.forEach((q,i)=>{const x=740,y=150+i*46;D.box(g,x,y-16,120,36,8,{fill:i===S.i?'rgba(63,224,255,.12)':'rgba(6,18,22,.7)',stroke:i===S.i?C.cyan:'rgba(127,243,255,.25)'});
+      D.text(g,`${q.lo}…${q.hi}°`,x+8,y-4,{align:'left',font:'700 12px "IBM Plex Mono", monospace'});
+      if(q.got!=null)D.text(g,fmtT(q.got)+(q.sh?` · ${q.shards}/${q.sh}`:''),x+8,y+11,{align:'left',font:'500 10px "IBM Plex Mono", monospace',col:q.got>=q.lo&&q.got<=q.hi&&q.crack<1?C.ok:C.warn})});
+    D.box(g,LOCKB.x,LOCKB.y,LOCKB.w,LOCKB.h,10,{fill:'rgba(255,110,74,.18)',stroke:C.accent,glow:C.accent});D.text(g,S.phase==='shatter'?'DONE':'LOCK',LOCKB.x+60,LOCKB.y+16,{font:'700 13px "IBM Plex Mono", monospace',col:'#FFD9CC'});D.text(g,'L',LOCKB.x+60,LOCKB.y+32,{font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    K.hint(K.playing?(S.phase==='shatter'?'click the ingredient to break off shards, then DONE':'hold to dip · release to lift · L to lock'):'')},
+  panel(K){if(!S)return{};const it=S.items[Math.min(S.i,S.items.length-1)];return{big:`${it.lo}…${it.hi} <small>°C</small>`,sub:`item ${Math.min(S.i+1,S.items.length)}/${S.items.length} · core ${fmtT(S.T)}`,
+    slots:S.items.map(q=>q.got==null?'':q.score>.85?'ok':q.score>.4?'warn':'')}},
+  evaluate(K){if(S.i<S.items.length&&S.phase==='freeze'&&S.T<15)record(K);else if(S.phase==='shatter')S.items[S.i].shards=S.shards,S.items[S.i].score=itemScore(S.items[S.i]);
+    const it=S.items,sc=it.map(q=>q.got==null?0:q.score);
+    return{score:100*sc.reduce((a,b)=>a+b,0)/sc.length,
+      lines:it.map((q,i)=>[`Item ${i+1} · ${q.lo}…${q.hi} °C`,q.got==null?'missing':`${fmtT(q.got)}${q.crack>=1?' · cracked':''}${q.sh?` · ${q.shards}/${q.sh} shards`:''}`]),
+      bars:{items:it.map((q,i)=>({v:Math.round(sc[i]*100),label:q.got==null?'—':fmtT(q.got),cls:sc[i]>.85?'ok':sc[i]>.4?'warn':'bad'})),max:100},
+      note:'Distance outside the window costs points; a cracked item caps at 40.'}},
+});
+function itemScore(q){const w=q.hi-q.lo,d=q.got<q.lo?q.lo-q.got:q.got>q.hi?q.got-q.hi:0;let s=Math.max(0,1-d/(w*1.5));if(q.crack>=1)s=Math.min(s,.4);if(q.sh)s*=Math.max(0,1-Math.abs(q.shards-q.sh)/q.sh);return s}
+function record(K){const q=S.items[S.i];q.got=S.T;q.crack=S.crack;q.score=itemScore(q)}
+function next(K){S.i++;S.T=20;S.surf=20;S.crack=0;S.cracked=false;S.hist=[];S.phase='freeze';S.shards=0;S.dip=false;
+  if(S.i>=S.items.length){K.state='ending';setTimeout(()=>K.finish('done'),500)}}
+function lock(K){if(!K.playing||S.i>=S.items.length)return;const q=S.items[S.i];
+  if(S.phase==='shatter'){q.shards=S.shards;q.score=itemScore(q);q.shards===q.sh?K.sfx.good():K.sfx.bad();next(K);return}
+  record(K);const inW=q.got>=q.lo&&q.got<=q.hi;inW&&q.crack<1?K.sfx.good():K.sfx.bad();K.toast(inW?'In the window':'Outside the window');
+  if(q.sh&&K.T.shatter){S.phase='shatter';S.shards=0;S.dip=false}else{if(q.sh)q.shards=q.sh,q.score=itemScore(q);next(K)}}
+function shatter(K,x,y){S.shards++;K.sfx.tink();K.burst(BATH.x,TOPY,{n:14,col:'#E9FDFF',spd:220,life:.5,r:2.5});K.shake(3)}
+</script>
+</body>
+</html>

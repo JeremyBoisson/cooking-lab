@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cooktop & pan</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Cooktop & pan · MELT / SEAR
+   Scroll (or ↑/↓) to set the heat in kelvin. The burner is hottest in the middle and the oil pools
+   downhill. Move the mouse to tilt the pan: pieces slide toward it. Hold the button to press down
+   (faster browning). Pull off (Space) when every piece is golden. */
+const P={x:550,y:300,r:175},PULLB={x:760,y:440,w:100,h:44},HEATP={x:762,y:110};
+const VARS=[
+ {id:'banana',name:'Fusion banana slices',kind:'Caramelise',desc:'Round slices that slide easily.',icon:'🍌',col:[255,236,160],rate:1.15,fric:2.2,shape:'disc',sz:20},
+ {id:'mince',name:'Synth-mince balls',kind:'Roll & sear',desc:'Balls roll far: tilt gently.',icon:'🧆',col:[190,92,72],rate:.85,fric:1.1,shape:'ball',sz:17},
+ {id:'beef',name:'Spark beef cubes',kind:'Sear',desc:'Grippy cubes: tilt hard to move them.',icon:'🥩',col:[170,70,62],rate:1,fric:4.5,shape:'cube',sz:19},
+ {id:'gnocchi',name:'Gravity-free gnocchi',kind:'Light · floaty',desc:'They drift even on a flat pan.',icon:'🥟',col:[247,240,220],rate:1.05,fric:1.6,shape:'pill',sz:16,drift:1},
+];
+let S=null;
+const brown=(c,b)=>{const t=Math.min(1.25,b)/1.25,stops=[c,[235,190,100],[190,120,50],[110,60,25],[30,20,15]];const f=Math.min(3.999,t*4),i=Math.floor(f),u=f-i,a=stops[i],z=stops[i+1];return`rgb(${a.map((x,j)=>Math.round(x+(z[j]-x)*u)).join(',')})`};
+const bname=b=>b<.25?'raw':b<.5?'blond':b<.55?'nearly':b<=.82?'golden':b<1?'dark':'burnt';
+MG.create({
+  id:'pan',name:'Cooktop & pan',verb:'MELT',plateLabel:'INDUCTION HOB · KELVIN CONTROL',
+  menuTitle:'Pick what goes in the pan',
+  intro:'Scroll to set the heat. The middle of the pan is hottest and the oil runs downhill. Move the mouse to tilt the pan and slide the pieces around; hold the button to press them down. Pull off when every piece is golden.',
+  keys:'<kbd>Wheel</kbd>/<kbd>↑↓</kbd> heat · <kbd>Move</kbd> tilt · <kbd>Hold</kbd> press · <kbd>Space</kbd> pull off',
+  variants:VARS,
+  order(v,rand,K){const lo=Math.min(K.T.minPieces,K.T.maxPieces),n=lo+Math.floor(rand()*(Math.max(K.T.minPieces,K.T.maxPieces)-lo+1)),pts=[];
+    for(let i=0;i<n;i++){const a=rand()*Math.PI*2,d=40+rand()*90;pts.push([Math.cos(a)*d,Math.sin(a)*d])}const c=.6+rand()*.15;
+    return{units:n,pts,band:[c-.1,c+.1],title:`${n} × ${v.name}`,subtitle:`every piece ${c<.66?'golden':'deep golden'} · don't burn any`,chip:`${n} pieces · ${c<.66?'golden':'deep golden'}`,label:'Brown evenly'}},
+  start(K,o){if(S&&S.snd)S.snd.stop();K.mouse.x=P.x;K.mouse.y=P.y;S={v:o.variant,o,set:420,T:300,press:false,tilt:[0,0],oil:[0,0],snd:null,
+    pc:o.pts.map(([x,y])=>({x,y,vx:0,vy:0,b:0,rot:Math.random()*6}))}},
+  stop(){if(S&&S.snd){S.snd.stop();S.snd=null}},
+  wheel(K,dy){S.set=K.clamp(S.set-dy*10,300,650);K.sfx.click()},
+  key(K,k,down){if(!down)return;if(k==='arrowup'||k==='arrowdown'){S.set=K.clamp(S.set+(k==='arrowup'?10:-10),300,650);K.sfx.click();return true}if(k===' '){pull(K);return true}},
+  down(K,x,y){if(x>PULLB.x&&x<PULLB.x+PULLB.w&&y>PULLB.y&&y<PULLB.y+PULLB.h){pull(K);return}S.press=true},
+  up(){S.press=false},
+  update(K,dt){if(!S)return;const v=S.v;
+    S.T+=(S.set-S.T)*(1-Math.exp(-dt*.7*K.T.heatResp));
+    if(!S.snd&&K.playing)S.snd=K.sfx.loop('noise',3000,'highpass');
+    const hot=Math.max(0,(S.T-380)/170);if(S.snd)S.snd.set(K.playing?Math.min(.14,hot*.08*(S.press?1.8:1)):0,2500+hot*1500);
+    if(!K.playing)return;
+    const mx=(K.mouse.x-P.x)/P.r,my=(K.mouse.y-P.y)/P.r,m=Math.hypot(mx,my),dz=.15,f=m<dz?0:Math.min(1,(m-dz)/(1-dz))/Math.max(m,1e-3);
+    S.tilt[0]+=(mx*f-S.tilt[0])*(1-Math.exp(-dt*8));S.tilt[1]+=(my*f-S.tilt[1])*(1-Math.exp(-dt*8));
+    S.oil[0]+=(S.tilt[0]*90-S.oil[0])*(1-Math.exp(-dt*3));S.oil[1]+=(S.tilt[1]*90-S.oil[1])*(1-Math.exp(-dt*3));
+    const acc=260*K.T.tilt,lim=P.r-v.sz-8;
+    for(const p of S.pc){p.vx+=S.tilt[0]*acc*dt;p.vy+=S.tilt[1]*acc*dt;if(v.drift){p.vx+=Math.sin(K.elapsed*1.3+p.rot)*30*dt;p.vy+=Math.cos(K.elapsed*1.1+p.rot)*30*dt}
+      const fr=Math.exp(-dt*v.fric*(S.press?2.5:1));p.vx*=fr;p.vy*=fr;p.x+=p.vx*dt;p.y+=p.vy*dt;p.rot+=(p.vx+p.vy)*dt*.01;
+      const d=Math.hypot(p.x,p.y);if(d>lim){const nx=p.x/d,ny=p.y/d;p.x=nx*lim;p.y=ny*lim;const vn=p.vx*nx+p.vy*ny;if(vn>0){p.vx-=1.6*vn*nx;p.vy-=1.6*vn*ny}}
+      const local=.45+.55*Math.exp(-((d/95)**2)),oil=Math.hypot(p.x-S.oil[0],p.y-S.oil[1])<70?1.35:.85;
+      const before=p.b;p.b+=Math.pow(hot,1.6)*local*oil*(S.press?K.T.press:1)*v.rate*.32*dt;
+      if(before<1&&p.b>=1){K.sfx.bad();K.burst(P.x+p.x,P.y+p.y,{n:10,col:'#555',spd:60,life:1,r:4,dir:-Math.PI/2})}
+      if(hot>.3&&Math.random()<dt*hot*(S.press?6:2))K.burst(P.x+p.x,P.y+p.y,{n:1,col:'rgba(255,240,200,.8)',spd:90,life:.35,r:1.2})}
+    for(let i=0;i<S.pc.length;i++)for(let j=i+1;j<S.pc.length;j++){const a=S.pc[i],b=S.pc[j],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),md=v.sz*2;
+      if(d<md&&d>0){const o=(md-d)/2,nx=dx/d,ny=dy/d;a.x-=nx*o;a.y-=ny*o;b.x+=nx*o;b.y+=ny*o;const rv=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rv<0){a.vx+=rv*nx*.5;a.vy+=rv*ny*.5;b.vx-=rv*nx*.5;b.vy-=rv*ny*.5}}}},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v,o=S.o,hot=Math.max(0,Math.min(1,(S.T-300)/350));
+    // burner glow + pan (offset a little by tilt for a sense of depth)
+    const ox=S.tilt[0]*8,oy=S.tilt[1]*8;
+    g.save();g.translate(P.x,P.y);
+    g.shadowColor=`rgba(255,${120-hot*60},40,${.3+hot*.6})`;g.shadowBlur=40;
+    g.fillStyle='#1a2226';g.beginPath();g.arc(ox,oy,P.r+12,0,K.TAU);g.fill();g.shadowBlur=0;
+    // handle
+    g.fillStyle='#24323a';g.save();g.rotate(-.1);g.beginPath();g.roundRect(P.r+6,-14,140,28,12);g.fill();g.strokeStyle=C.cyan;g.lineWidth=1.5;g.stroke();g.restore();
+    const pg=g.createRadialGradient(ox,oy,10,ox,oy,P.r);pg.addColorStop(0,`rgb(${60+hot*120},${40+hot*30},${35})`);pg.addColorStop(.5,'#2a3034');pg.addColorStop(1,'#151a1d');g.fillStyle=pg;g.beginPath();g.arc(ox,oy,P.r,0,K.TAU);g.fill();
+    g.strokeStyle='rgba(127,243,255,.6)';g.lineWidth=3;g.shadowColor=C.cyan;g.shadowBlur=10;g.beginPath();g.arc(ox,oy,P.r,0,K.TAU);g.stroke();g.shadowBlur=0;
+    // oil pool
+    const og=g.createRadialGradient(S.oil[0],S.oil[1],5,S.oil[0],S.oil[1],80);og.addColorStop(0,'rgba(255,220,120,.35)');og.addColorStop(1,'rgba(255,220,120,0)');g.fillStyle=og;g.beginPath();g.arc(S.oil[0],S.oil[1],80,0,K.TAU);g.fill();
+    // pieces
+    for(const p of S.pc){g.save();g.translate(p.x,p.y+(S.press?1:0));g.rotate(p.rot);const col=brown(v.col,p.b),inB=p.b>=o.band[0]&&p.b<=o.band[1];
+      g.shadowColor=inB?'#3CC48E':p.b>1?'#000':'rgba(0,0,0,.5)';g.shadowBlur=inB?14:6;g.fillStyle=col;g.beginPath();
+      if(v.shape==='cube')g.roundRect(-v.sz,-v.sz,v.sz*2,v.sz*2,4);else if(v.shape==='pill')g.ellipse(0,0,v.sz*1.3,v.sz*.8,0,0,K.TAU);else g.arc(0,0,v.sz,0,K.TAU);g.fill();g.shadowBlur=0;
+      if(v.shape==='disc'){g.fillStyle='rgba(120,90,40,.35)';for(let i=0;i<5;i++){g.beginPath();g.arc(Math.cos(i*1.26)*7,Math.sin(i*1.26)*7,1.6,0,K.TAU);g.fill()}}
+      if(p.b>.4){g.strokeStyle='rgba(40,20,10,.5)';g.lineWidth=2;for(let i=-1;i<=1;i++){g.beginPath();g.moveTo(-v.sz*.7,i*6);g.lineTo(v.sz*.7,i*6);g.stroke()}}
+      g.restore()}
+    g.restore();
+    // heat readout
+    D.box(g,HEATP.x-10,HEATP.y-26,112,150,10,{fill:'rgba(6,18,22,.85)',stroke:'rgba(127,243,255,.35)'});
+    D.text(g,'PAN',HEATP.x,HEATP.y-10,{align:'left',font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});
+    D.text(g,Math.round(S.T)+' K',HEATP.x+94,HEATP.y+16,{align:'right',font:'700 24px "IBM Plex Mono", monospace',glow:`rgb(255,${200-hot*120},80)`,col:'#FFE1CC'});
+    D.text(g,'set '+S.set+' K',HEATP.x,HEATP.y+44,{align:'left',font:'500 11px "IBM Plex Mono", monospace',col:C.dim});
+    g.fillStyle='rgba(127,243,255,.12)';g.fillRect(HEATP.x,HEATP.y+58,100,8);g.fillStyle=`rgb(255,${200-hot*130},70)`;g.fillRect(HEATP.x,HEATP.y+58,100*(S.T-300)/350,8);
+    g.fillStyle='#fff';g.fillRect(HEATP.x+100*(S.set-300)/350-1,HEATP.y+54,2,16);
+    D.text(g,'browns above 380 K',HEATP.x,HEATP.y+84,{align:'left',font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    D.text(g,S.press?'PRESSING':'',HEATP.x,HEATP.y+104,{align:'left',font:'700 11px "IBM Plex Mono", monospace',col:C.accent});
+    D.box(g,PULLB.x,PULLB.y,PULLB.w,PULLB.h,10,{fill:'rgba(255,110,74,.18)',stroke:C.accent,glow:C.accent});D.text(g,'PULL OFF',PULLB.x+PULLB.w/2,PULLB.y+16,{font:'700 13px "IBM Plex Mono", monospace',col:'#FFD9CC'});D.text(g,'space',PULLB.x+PULLB.w/2,PULLB.y+32,{font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    K.hint(K.playing?'move = tilt · hold = press · wheel = heat':'')},
+  panel(K){if(!S)return{};const o=S.o,ok=S.pc.filter(p=>p.b>=o.band[0]&&p.b<=o.band[1]).length,burnt=S.pc.filter(p=>p.b>1).length;
+    return{big:`${ok}/${S.pc.length} <small>golden</small>`,sub:`pan ${Math.round(S.T)} K${burnt?` · ${burnt} burnt`:''}`,slots:S.pc.map(p=>p.b>=o.band[0]&&p.b<=o.band[1]?'ok':p.b>o.band[0]-.12&&p.b<1?'warn':'')}},
+  evaluate(K){const o=S.o,sc=S.pc.map(p=>p.b>1?0:p.b<o.band[0]?Math.max(0,1-(o.band[0]-p.b)/.35):p.b>o.band[1]?Math.max(0,1-(p.b-o.band[1])/.2):1);
+    const mean=S.pc.reduce((a,p)=>a+p.b,0)/S.pc.length,sd=Math.sqrt(S.pc.reduce((a,p)=>a+(p.b-mean)**2,0)/S.pc.length);
+    return{score:100*sc.reduce((a,b)=>a+b,0)/sc.length,
+      lines:[['Golden pieces',`${sc.filter(s=>s===1).length}/${sc.length}`],['Burnt',S.pc.filter(p=>p.b>1).length],['Evenness (spread)',sd.toFixed(2)],['Final heat',Math.round(S.T)+' K']],
+      bars:{items:S.pc.map(p=>({v:Math.min(130,p.b*100),label:bname(p.b),cls:p.b>=o.band[0]&&p.b<=o.band[1]?'ok':p.b>1?'bad':'warn'})),target:(o.band[0]+o.band[1])/2*100,max:130,tlabel:'golden'},
+      note:'Each piece scores on its distance to the golden band; burnt pieces score 0.'}},
+});
+function pull(K){if(!K.playing)return;K.state='ending';S.press=false;K.sfx.whoosh();setTimeout(()=>K.finish('done'),400)}
+</script>
+</body>
+</html>

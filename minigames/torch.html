@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plasma torch</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Plasma torch · SEAR
+   Aim with the mouse, hold to fire, wheel to change the flame width (narrow = hot and precise,
+   wide = gentle). Caramelise the dashed target zone to the requested colour. Keep the flame moving:
+   sugar burns fast, and caramel outside the zone counts as spill. */
+const CX=525,CY=295,R=190,N=76,CELL=2*R/N;
+const VARS=[
+ {id:'disc',name:'Cryo-crème brûlée',kind:'Full disc',desc:'Classic: caramelise the whole surface evenly.',icon:'🍮',units:5},
+ {id:'ring',name:'Glow ring tart',kind:'Ring',desc:'Only the outer ring; keep the centre pale.',icon:'⭕',units:4},
+ {id:'star',name:'Star crust',kind:'Stencil',desc:'A five-point star. Precision work.',icon:'⭐',units:4},
+ {id:'stripes',name:'Plasma stripes',kind:'Two bands',desc:'Two parallel stripes, straight and even.',icon:'〰️',units:4},
+];
+let S=null;
+const SUG=[[245,240,225],[240,215,160],[226,160,62],[172,92,32],[72,36,16],[20,15,12]];
+function colOf(c){const f=Math.max(0,Math.min(4.999,c/1.2*5)),i=Math.floor(f),u=f-i,a=SUG[i],b=SUG[i+1];return[a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u]}
+const cname=c=>c<.2?'raw sugar':c<.45?'blond':c<.62?'golden':c<.8?'amber':c<1?'dark':'burnt';
+function zoneFn(id,rot){const cs=Math.cos(rot),sn=Math.sin(rot);return(x,y)=>{const u=(x*cs+y*sn)/R,v=(-x*sn+y*cs)/R,d=Math.hypot(u,v);
+  if(id==='disc')return d<.9;if(id==='ring')return d>.52&&d<.9;
+  if(id==='stripes')return d<.92&&(Math.abs(v-.32)<.15||Math.abs(v+.32)<.15);
+  const a=Math.atan2(v,u),k=Math.cos(2.5*a)**2,rr=.36+.52*Math.pow(k,3);return d<rr}}
+MG.create({
+  id:'torch',name:'Plasma torch',verb:'SEAR',plateLabel:'PLASMA TORCH · 5,000 K',
+  menuTitle:'Pick a crust to torch',
+  intro:'Hold to fire the torch and move it over the sugar. The wheel changes the flame width: narrow is hot and precise, wide is gentle. Caramelise the dashed zone to the requested colour without burning it or spilling outside.',
+  keys:'<kbd>Hold</kbd> fire · <kbd>Wheel</kbd> flame width',
+  variants:VARS,
+  order(v,rand,K){const c0=.5+rand()*.25,rot=rand()*Math.PI*2;return{units:v.units,c0,rot,title:v.name,subtitle:`${cname(c0)} caramel · ${v.kind.toLowerCase()}`,chip:`${cname(c0)} · ${v.kind.toLowerCase()}`,label:'Caramel target'}},
+  start(K,o){if(S&&S.snd)S.snd.stop();const z=zoneFn(o.variant.id,o.rot),inside=new Uint8Array(N*N),zone=new Uint8Array(N*N);let nz=0;
+    for(let j=0;j<N;j++)for(let i=0;i<N;i++){const x=(i+.5)*CELL-R,y=(j+.5)*CELL-R,k=j*N+i;if(Math.hypot(x,y)<R*.97){inside[k]=1;if(z(x,y)){zone[k]=1;nz++}}}
+    const cv=document.createElement('canvas');cv.width=cv.height=N;
+    S={o,c:new Float32Array(N*N),inside,zone,nz,w:28,fire:false,snd:null,cv,cg:cv.getContext('2d'),img:new ImageData(N,N),dirty:true,
+      band:[o.c0-.12,o.c0+.12],burnAt:Math.min(1.15,o.c0+.12+.18*K.T.burn)}},
+  stop(){if(S&&S.snd){S.snd.stop();S.snd=null}},
+  wheel(K,dy){S.w=K.clamp(S.w+dy*4,12,64)},
+  down(K){S.fire=true;if(!S.snd)S.snd=K.sfx.loop('noise',1200,'bandpass')},
+  up(){S.fire=false;if(S.snd){S.snd.stop();S.snd=null}},
+  update(K,dt){if(!S)return;if(S.snd)S.snd.set(S.fire&&K.playing?.18:0,700+2000*(28/S.w));
+    if(!S.fire||!K.playing)return;const mx=K.mouse.x-CX,my=K.mouse.y-CY,w=S.w,rr=w*2.2,amp=K.T.power*1.15*Math.pow(28/w,1.1)*dt;
+    const i0=Math.max(0,Math.floor((mx-rr+R)/CELL)),i1=Math.min(N-1,Math.floor((mx+rr+R)/CELL)),j0=Math.max(0,Math.floor((my-rr+R)/CELL)),j1=Math.min(N-1,Math.floor((my+rr+R)/CELL));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const k=j*N+i;if(!S.inside[k])continue;const x=(i+.5)*CELL-R,y=(j+.5)*CELL-R,d2=((x-mx)**2+(y-my)**2)/(w*w);if(d2>5)continue;
+      const before=S.c[k];S.c[k]+=amp*Math.exp(-d2);if(before<S.burnAt&&S.c[k]>=S.burnAt&&Math.random()<.15)K.burst(CX+x,CY+y,{n:2,col:'#333',spd:40,life:.8,r:3,dir:-Math.PI/2})}
+    S.dirty=true;if(Math.random()<dt*40)K.burst(K.mouse.x,K.mouse.y,{n:2,col:Math.random()<.5?'#9FE6FF':'#FFFFFF',spd:120,life:.25,r:2})},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K;
+    if(S.dirty){const d=S.img.data;for(let k=0;k<N*N;k++){const[r,gg,b]=colOf(S.c[k]);d[k*4]=r;d[k*4+1]=gg;d[k*4+2]=b;d[k*4+3]=S.inside[k]?255:0}S.cg.putImageData(S.img,0,0);S.dirty=false}
+    // ramekin
+    g.save();g.shadowColor=C.cyan;g.shadowBlur=20;g.fillStyle='#E8F3FF';g.beginPath();g.arc(CX,CY,R+16,0,K.TAU);g.fill();g.restore();
+    g.fillStyle='#bcd3dc';g.beginPath();g.arc(CX,CY,R+6,0,K.TAU);g.fill();
+    g.save();g.beginPath();g.arc(CX,CY,R,0,K.TAU);g.clip();g.imageSmoothingEnabled=true;g.drawImage(S.cv,CX-R,CY-R,2*R,2*R);
+    // sugar sparkle
+    g.globalAlpha=.25;for(let i=0;i<40;i++){const a=i*2.39,r=Math.sqrt(i/40)*R;g.fillStyle='#fff';g.fillRect(CX+Math.cos(a)*r,CY+Math.sin(a)*r,1.5,1.5)}g.globalAlpha=1;
+    // target zone outline (marching dashes)
+    if(K.T.guide){g.strokeStyle=`rgba(63,224,255,${.55+.35*Math.sin(now/250)})`;g.lineWidth=1.6;
+      for(let j=0;j<N;j++)for(let i=0;i<N;i++){const k=j*N+i;if(!S.zone[k])continue;const x=CX-R+i*CELL,y=CY-R+j*CELL;
+        if(i===N-1||!S.zone[k+1]){g.beginPath();g.moveTo(x+CELL,y);g.lineTo(x+CELL,y+CELL);g.stroke()}if(i===0||!S.zone[k-1]){g.beginPath();g.moveTo(x,y);g.lineTo(x,y+CELL);g.stroke()}
+        if(j===N-1||!S.zone[k+N]){g.beginPath();g.moveTo(x,y+CELL);g.lineTo(x+CELL,y+CELL);g.stroke()}if(j===0||!S.zone[k-N]){g.beginPath();g.moveTo(x,y);g.lineTo(x+CELL,y);g.stroke()}}g.setLineDash([])}
+    g.restore();
+    // torch body + flame
+    const mx=K.mouse.x,my=K.mouse.y,bx=mx+70,by=my-110;
+    g.save();g.strokeStyle='#5a6b73';g.lineWidth=14;g.lineCap='round';g.beginPath();g.moveTo(bx+60,by-60);g.lineTo(bx,by);g.stroke();g.strokeStyle='#9fb4bd';g.lineWidth=8;g.beginPath();g.moveTo(bx,by);g.lineTo(mx+18,my-28);g.stroke();g.restore();
+    if(S.fire&&K.playing){g.save();const fg=g.createRadialGradient(mx,my,2,mx,my,S.w*1.6);fg.addColorStop(0,'rgba(255,255,255,.95)');fg.addColorStop(.3,'rgba(120,200,255,.7)');fg.addColorStop(1,'rgba(60,120,255,0)');g.fillStyle=fg;g.beginPath();g.arc(mx,my,S.w*1.6,0,K.TAU);g.fill();
+      g.strokeStyle='rgba(160,220,255,.8)';g.lineWidth=S.w*.5;g.lineCap='round';g.globalAlpha=.6;g.beginPath();g.moveTo(mx+18,my-28);g.lineTo(mx+Math.sin(now/40)*2,my);g.stroke();g.restore()}
+    else{g.save();g.strokeStyle='rgba(160,220,255,.5)';g.setLineDash([3,4]);g.beginPath();g.arc(mx,my,S.w,0,K.TAU);g.stroke();g.restore()}
+    // legend
+    const lx=790;D.text(g,'FLAME',lx,120,{font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});D.text(g,Math.round(S.w)+' px',lx,142,{font:'700 18px "IBM Plex Mono", monospace'});D.text(g,S.w<24?'hot · precise':S.w>44?'wide · gentle':'balanced',lx,162,{font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    const sw=[.1,.35,.55,.72,.9,1.1];sw.forEach((c,i)=>{const[r,gg,b]=colOf(c),y=210+i*30;g.fillStyle=`rgb(${r|0},${gg|0},${b|0})`;g.fillRect(lx-40,y,22,20);
+      const tgt=c>=S.band[0]&&c<=S.band[1];D.text(g,cname(c),lx-10,y+10,{align:'left',font:(tgt?'700':'500')+' 11px "IBM Plex Mono", monospace',col:tgt?C.ok:C.dim})});
+    K.hint(K.playing?'hold = fire · wheel = flame width':'')},
+  panel(K){if(!S)return{};const r=stats();return{big:Math.round(r.cov*100)+'% <small>in band</small>',sub:`${cname(S.o.c0)} · burnt ${Math.round(r.burnt*100)}% · spill ${Math.round(r.spill*100)}%`,slots:[.2,.4,.6,.8,.95].map(t=>r.cov>=t?'ok':r.cov>=t-.1?'warn':'')}},
+  evaluate(K){const r=stats(),score=100*(r.part-r.burnt*1.5-r.spill*.6);
+    return{score,lines:[['Zone in target colour',Math.round(r.cov*100)+'%'],['Burnt (zone)',Math.round(r.burnt*100)+'%'],['Spill outside zone',Math.round(r.spill*100)+'%'],['Target',cname(S.o.c0)]],
+      bars:{items:[{v:Math.round(r.cov*100),label:'in band',cls:'ok'},{v:Math.round(r.under*100),label:'under',cls:'warn'},{v:Math.round(r.over*100),label:'over',cls:'warn'},{v:Math.round(r.burnt*100),label:'burnt',cls:'bad'}],max:100},
+      note:'Score = zone closeness to the target colour − 1.5 × burnt − 0.6 × spill.'}},
+});
+function stats(){let cov=0,part=0,burnt=0,under=0,over=0,spill=0,nout=0;const[lo,hi]=S.band;
+  for(let k=0;k<N*N;k++){if(!S.inside[k])continue;const c=S.c[k];
+    if(S.zone[k]){if(c>=S.burnAt){burnt++;over++}else if(c>=lo&&c<=hi){cov++;part++}else if(c<lo){under++;part+=Math.max(0,1-(lo-c)/.3)}else{over++;part+=Math.max(0,1-(c-hi)/(S.burnAt-hi))}}
+    else{nout++;if(c>.3)spill++}}
+  const n=S.nz||1;return{cov:cov/n,part:part/n,burnt:burnt/n,under:under/n,over:over/n,spill:nout?spill/nout:0}}
+</script>
+</body>
+</html>

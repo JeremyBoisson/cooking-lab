@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mitosis oven</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Mitosis oven · DIVIDE
+   Cells pulse on a beat. Click (or Space) when the shrinking ring meets the membrane.
+   Perfect / Good hits make a cell divide; a miss stalls division until your next good hit.
+   Once you reach the target count the culture starts dividing on its own: press STOP (X) exactly then. */
+const CX=560,CY=295,R=165,STOPB={x:770,y:430,w:100,h:48};
+const VARS=[
+ {id:'mince',name:'Synth-mince',kind:'90 BPM · steady',desc:'A steady pulse to learn the rhythm.',icon:'🧫',bpm:90,drift:0,col:'#FF8A6A'},
+ {id:'gel',name:'Gel spheres',kind:'110 BPM',desc:'Quicker pulse, bouncy cells.',icon:'🫧',bpm:110,drift:0,col:'#FF8FB1'},
+ {id:'bean',name:'Glow bean paste',kind:'75 BPM · drifting',desc:'Slow, but the tempo wanders.',icon:'🟣',bpm:75,drift:.08,col:'#9D88FF'},
+ {id:'meatballs',name:'Mitosis meatballs',kind:'125 BPM · drifting',desc:'Fast and unstable. Expert.',icon:'🍖',bpm:125,drift:.1,col:'#E8473B'},
+];
+let S=null;
+MG.create({
+  id:'mitosis',name:'Mitosis oven',verb:'DIVIDE',plateLabel:'MITOSIS DOME · BIO-PULSE',
+  menuTitle:'Pick a culture',
+  intro:'Click (or press Space) when the shrinking ring reaches the cell membrane. Perfect and Good hits divide a cell; a miss stalls division until your next good hit. When you reach the target the culture keeps dividing by itself: press STOP (X) right away.',
+  keys:'<kbd>Click</kbd>/<kbd>Space</kbd> pulse · <kbd>X</kbd> stop',
+  variants:VARS,
+  order(v,rand,K){const n=6+Math.floor(rand()*9),bpm=Math.round(v.bpm*(.92+rand()*.16));return{units:n,n,bpm,title:`Grow ${n} cells`,subtitle:`${v.name} · ${bpm} BPM`,chip:`${n} cells · ${bpm} BPM`,label:'Cell target'}},
+  start(K,o){const v=o.variant;S={v,o,t:0,cells:1,stall:false,beats:[],next:1.2,period:60/(o.bpm*K.T.bpmMul),hits:[],judge:null,jt:0,births:[{t:-9}],reached:null,stopped:false,pulse:0};
+    S.beats.push({t:S.next,hit:null})},
+  down(K,x,y){if(x>STOPB.x&&x<STOPB.x+STOPB.w&&y>STOPB.y&&y<STOPB.y+STOPB.h){stop(K);return}hit(K)},
+  key(K,k,down){if(!down)return;if(k===' '){hit(K);return true}if(k==='x'){stop(K);return true}},
+  update(K,dt){if(!S||!K.playing)return;S.t+=dt;S.jt=Math.max(0,S.jt-dt);S.pulse=Math.max(0,S.pulse-dt*3);
+    const win=.13*K.T.hitWin;
+    // schedule beats (tempo drift)
+    while(S.beats[S.beats.length-1].t<S.t+3){const last=S.beats[S.beats.length-1].t,dr=S.v.drift*K.T.drift,p=S.period*(1+dr*Math.sin(last*.45)+dr*.5*Math.sin(last*1.3));S.beats.push({t:last+p,hit:null})}
+    for(const b of S.beats){if(b.passed)continue;
+      if(S.t>=b.t&&!b.ticked){b.ticked=true;S.pulse=1;K.sfx.tone(220,.08,.12,'sine',110);
+        if(S.reached!=null&&S.beatsSince++>=K.T.grace){grow(K,true)}}
+      if(b.hit==null&&S.t>b.t+win){b.passed=true;b.hit='miss';S.hits.push(0);S.stall=true;setJudge('MISS')}}},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v;
+    // dome
+    g.save();g.beginPath();g.arc(CX,CY,R+20,0,K.TAU);const dg=g.createRadialGradient(CX,CY-60,20,CX,CY,R+20);dg.addColorStop(0,'rgba(80,140,160,.25)');dg.addColorStop(1,'rgba(10,30,40,.6)');g.fillStyle=dg;g.fill();g.restore();
+    D.ring(g,CX,CY,R+20,0,K.TAU,'rgba(127,243,255,.7)',3,C.cyan);
+    // cells (phyllotaxis)
+    const n=S.cells,maxR=R*.86,cr=Math.max(10,Math.min(34,maxR/Math.sqrt(Math.max(n,1))*.9)),pul=1+S.pulse*.08;
+    for(let i=0;i<n;i++){const a=i*2.39996,rr=62+Math.sqrt((i+.5)/n)*(maxR-62),x=CX+Math.cos(a)*rr,y=CY+Math.sin(a)*rr,age=(S.t-(S.births[i]?.t??-9));
+      const born=Math.min(1,age/.25),r=cr*pul*(.6+.4*born);g.save();g.shadowColor=v.col;g.shadowBlur=10+S.pulse*14;g.fillStyle=v.col;g.globalAlpha=.75;g.beginPath();g.arc(x,y,r,0,K.TAU);g.fill();
+      g.globalAlpha=1;g.fillStyle='rgba(255,255,255,.65)';g.beginPath();g.arc(x-r*.25,y-r*.25,r*.28,0,K.TAU);g.fill();g.restore()}
+    // approach ring for the next beat
+    const nb=S.beats.find(b=>!b.passed&&b.hit==null&&b.t>=S.t-.13);
+    if(nb&&K.playing){const lead=Math.max(.6,S.period),u=(nb.t-S.t)/lead;if(u<=1){const rr=40+u*(R-30);D.ring(g,CX,CY,rr,0,K.TAU,`rgba(255,255,255,${.4+(1-u)*.5})`,3,'#fff')}}
+    D.ring(g,CX,CY,40,0,K.TAU,'rgba(63,224,255,.9)',2,C.cyan);
+    // count
+    const over=S.cells>S.o.n,at=S.cells===S.o.n;
+    D.text(g,"CELLS",790,230,{font:"600 11px \"IBM Plex Mono\", monospace",col:C.cyan2});D.text(g,S.cells+" / "+S.o.n,790,256,{font:"800 26px \"Bricolage Grotesque\", sans-serif",col:over?C.bad:at?"#B9FFDF":C.ink,glow:over?C.bad:at?C.ok:C.cyan});
+    if(S.jt>0)D.text(g,S.judge,CX,CY-R-40,{font:'800 26px "Bricolage Grotesque", sans-serif',col:S.judge==='PERFECT'?'#B9FFDF':S.judge==='GOOD'?C.warn:C.bad,glow:S.judge==='PERFECT'?C.ok:S.judge==='GOOD'?C.warn:C.bad});
+    if(S.stall)D.text(g,'division stalled',CX,CY+R+42,{font:'600 12px "IBM Plex Mono", monospace',col:C.warn});
+    if(S.reached!=null&&!S.stopped&&Math.floor(now/180)%2)D.text(g,'OVERGROWTH: STOP!',CX,CY+R+42,{font:'700 14px "IBM Plex Mono", monospace',col:C.bad,glow:C.bad});
+    // stop + rhythm meter
+    D.box(g,STOPB.x,STOPB.y,STOPB.w,STOPB.h,10,{fill:'rgba(255,110,74,.2)',stroke:C.accent,glow:C.accent});D.text(g,'STOP',STOPB.x+50,STOPB.y+18,{font:'800 16px "IBM Plex Mono", monospace',col:'#FFD9CC'});D.text(g,'X',STOPB.x+50,STOPB.y+36,{font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    const lx=790;D.text(g,'RHYTHM',lx,120,{font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});const acc=S.hits.length?S.hits.reduce((a,b)=>a+b,0)/S.hits.length:1;
+    D.text(g,Math.round(acc*100)+'%',lx,146,{font:'700 22px "IBM Plex Mono", monospace'});
+    S.hits.slice(-10).forEach((h,i)=>{g.fillStyle=h===1?C.ok:h>0?C.warn:C.bad;g.fillRect(lx-50+i*10,166,8,8)});
+    D.text(g,`${Math.round(60/S.period)} BPM`,lx,190,{font:'500 11px "IBM Plex Mono", monospace',col:C.dim});
+    K.hint(K.playing?'click / space on the beat · X = stop':'')},
+  panel(K){if(!S)return{};const n=S.o.n;return{big:`${S.cells}/${n} <small>cells</small>`,sub:S.reached!=null?'target reached: STOP!':`${S.o.bpm} BPM · ${S.stall?'stalled':'dividing'}`,
+    slots:Array.from({length:Math.min(n,16)},(_,i)=>i<S.cells?(i<n?'ok':''):'')}},
+  evaluate(K){const acc=S.hits.length?S.hits.reduce((a,b)=>a+b,0)/S.hits.length:0,d=Math.abs(S.cells-S.o.n),cnt=Math.max(0,1-d*.25);
+    return{score:100*(acc*.4+cnt*.6),lines:[['Cells',`${S.cells} / ${S.o.n}`],['Rhythm accuracy',Math.round(acc*100)+'%'],['Perfect · Good · Miss',`${S.hits.filter(h=>h===1).length} · ${S.hits.filter(h=>h>0&&h<1).length} · ${S.hits.filter(h=>h===0).length}`]],
+      bars:{items:[{v:Math.round(acc*100),label:'rhythm',cls:acc>.8?'ok':acc>.5?'warn':'bad'},{v:Math.round(cnt*100),label:'count',cls:d===0?'ok':d===1?'warn':'bad'}],max:100},
+      note:'60% exact cell count (−25% per cell off), 40% rhythm accuracy.'}},
+});
+function setJudge(j){S.judge=j;S.jt=.45}
+function grow(K,auto){S.cells++;S.births[S.cells-1]={t:S.t};K.burst(CX,CY,{n:auto?6:14,col:auto?'#FF6370':S.v.col,spd:160,life:.4});
+  if(S.reached==null&&S.cells>=S.o.n){S.reached=S.t;S.beatsSince=0;K.sfx.tone(1320,.2,.2,'triangle')}if(auto){K.sfx.bad();K.shake(3)}}
+function hit(K){if(!K.playing)return;const win=.13*K.T.hitWin,perf=.06*K.T.hitWin;
+  let best=null,bd=1e9;for(const b of S.beats){if(b.hit!=null)continue;const d=Math.abs(S.t-b.t);if(d<bd){bd=d;best=b}}
+  if(!best||bd>Math.max(win*2,S.period*.45)){setJudge('OFF-BEAT');S.hits.push(0);K.sfx.tink();return}
+  if(bd<=perf){best.hit='perfect';S.hits.push(1);setJudge('PERFECT');K.sfx.good()}else if(bd<=win){best.hit='good';S.hits.push(.6);setJudge('GOOD');K.sfx.pop()}
+  else{best.hit='miss';best.passed=true;S.hits.push(0);S.stall=true;setJudge(S.t<best.t?'EARLY':'LATE');K.sfx.tink();return}
+  best.passed=true;if(S.stall){S.stall=false}else if(S.reached==null)grow(K,false)}
+function stop(K){if(!K.playing)return;S.stopped=true;K.state='ending';K.sfx.thud();setTimeout(()=>K.finish('done'),400)}
+</script>
+</body>
+</html>

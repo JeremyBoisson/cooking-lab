@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Oven</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Oven · BAKE
+   Scroll (or ↑/↓) to set the oven temperature, click START to heat. The core temperature lags behind
+   the air (thermal inertia) and the crust browns when the air is hot. The crust is only visible with
+   the door open, but opening it dumps heat. PULL OUT when the core is in the window and the crust is right. */
+const OV={x:300,y:96,w:330,h:380},DOOR={x:318,y:150,w:294,h:250},DIAL={x:745,y:150,r:52},STARTB={x:690,y:225,w:110,h:40},PULLB={x:690,y:278,w:110,h:44},GR={x:660,y:350,w:200,h:120};
+const VARS=[
+ {id:'potato',name:'Moon potato',kind:'Dense · slow core',desc:'Heavy and slow to heat through.',icon:'🥔',col:'#E8D3A2',k:.05,bv:.55,core:[90,97],brown:[.45,.7]},
+ {id:'batter',name:'Helium batter',kind:'Light · browns fast',desc:'Heats quickly; the crust must stay light.',icon:'🧁',col:'#F5DEB3',k:.1,bv:1.1,core:[88,95],brown:[.3,.5]},
+ {id:'gnocchi',name:'Gravity-free gnocchi',kind:'Steam · pale',desc:'Cook through without any colour.',icon:'🥟',col:'#F7F3EA',k:.12,bv:1.2,core:[70,78],brown:[0,.15]},
+ {id:'falafel',name:'Fusion falafel',kind:'Hot · crisp',desc:'High heat for a dark, crisp crust.',icon:'🧆',col:'#C8A165',k:.14,bv:1.3,core:[74,84],brown:[.65,.9]},
+];
+let S=null;
+const brownName=b=>b<.15?'pale':b<.35?'blond':b<.55?'golden':b<.75?'amber':b<.95?'dark':'burnt';
+const brownCol=b=>{const t=Math.min(1.2,b),c=[[247,240,220],[240,200,120],[205,140,60],[150,85,35],[60,35,20]];const f=Math.min(3.999,t/1.2*4),i=Math.floor(f),u=f-i,a=c[i],z=c[i+1];return`rgb(${a.map((x,j)=>Math.round(x+(z[j]-x)*u)).join(',')})`};
+MG.create({
+  id:'oven',name:'Oven',verb:'BAKE',plateLabel:'CONVECTION OVEN · TIME ×60',
+  menuTitle:'Pick a dish to bake',
+  intro:'Scroll to set the temperature, click START. The core heats slowly behind the air, and the crust browns when it\'s hot. You only see the crust with the door open, and opening it loses heat. PULL OUT when both are right.',
+  keys:'<kbd>Wheel</kbd>/<kbd>↑↓</kbd> temperature · <kbd>D</kbd> door · <kbd>Space</kbd> pull out',
+  variants:VARS,
+  order(v,rand,K){const sh=Math.round((rand()-.5)*6),bs=(rand()-.5)*.1,w=K.T.window;
+    const cc=(v.core[0]+v.core[1])/2+sh,cw=(v.core[1]-v.core[0])/2*w,bc=(v.brown[0]+v.brown[1])/2+bs,bw=(v.brown[1]-v.brown[0])/2*w;
+    const core=[Math.round(cc-cw),Math.round(cc+cw)],brown=[Math.max(0,bc-bw),bc+bw];
+    return{units:1,core,brown,title:v.name,subtitle:`core ${core[0]}–${core[1]} °C · crust ${brownName((brown[0]+brown[1])/2)}`,chip:`${core[0]}–${core[1]} °C · ${brownName((brown[0]+brown[1])/2)}`,label:'Core target'}},
+  start(K,o){S={v:o.variant,o,set:180,air:22,core:20,brown:0,on:false,door:false,opens:0,hist:[],ht:0,out:false,clock:0}},
+  wheel(K,dy){S.set=K.clamp(S.set-dy*5,60,300);K.sfx.click()},
+  key(K,k,down){if(!down)return;if(k==='arrowup'||k==='arrowdown'){S.set=K.clamp(S.set+(k==='arrowup'?5:-5),60,300);K.sfx.click();return true}
+    if(k==='d'){toggleDoor(K);return true}if(k===' '){pull(K);return true}},
+  down(K,x,y){const inR=(b)=>x>b.x&&x<b.x+b.w&&y>b.y&&y<b.y+b.h;
+    if(inR(STARTB)){S.on=!S.on;K.sfx.tone(S.on?660:330,.12,.15,'triangle');return}
+    if(inR(PULLB)){pull(K);return}
+    if(Math.hypot(x-DIAL.x,y-DIAL.y)<DIAL.r){S.set=K.clamp(S.set+(y<DIAL.y?10:-10),60,300);K.sfx.click();return}
+    if(inR(DOOR)){toggleDoor(K)}},
+  update(K,dt){if(!S||!K.playing)return;const v=S.v;S.clock+=dt;
+    const target=S.on?S.set:22,rate=S.door?(.6*K.T.heatLoss):(S.on?.22:.05);S.air+=(target-S.air)*(1-Math.exp(-dt*rate));
+    if(S.door)S.air+=(22-S.air)*(1-Math.exp(-dt*.5*K.T.heatLoss));
+    S.core+=(S.air-S.core)*(1-Math.exp(-dt*v.k/K.T.inertia));
+    S.brown+=Math.max(0,(S.air-140)/160)**2*v.bv*.45*dt;
+    if((S.ht+=dt)>.1){S.ht=0;S.hist.push([S.air,S.core]);if(S.hist.length>300)S.hist.shift()}},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v,o=S.o;
+    // oven body
+    D.box(g,OV.x,OV.y,OV.w,OV.h,18,{fill:'#122a31',stroke:C.cyan,glow:C.cyan});
+    D.text(g,'CONVECTION OVEN',OV.x+OV.w/2,OV.y+24,{font:'600 11px "IBM Plex Mono", monospace',col:C.cyan2});
+    const heat=Math.max(0,Math.min(1,(S.air-40)/250));
+    // interior through the door
+    g.save();g.beginPath();g.roundRect(DOOR.x,DOOR.y,DOOR.w,DOOR.h,12);g.clip();
+    const ig=g.createRadialGradient(DOOR.x+DOOR.w/2,DOOR.y+DOOR.h,10,DOOR.x+DOOR.w/2,DOOR.y+DOOR.h/2,DOOR.w);ig.addColorStop(0,`rgba(255,${140-heat*60},40,${.15+heat*.6})`);ig.addColorStop(1,'rgba(10,20,25,.9)');g.fillStyle=ig;g.fillRect(DOOR.x,DOOR.y,DOOR.w,DOOR.h);
+    for(let i=0;i<3;i++){g.strokeStyle=`rgba(255,${120+i*20},60,${heat*.7})`;g.lineWidth=3;g.beginPath();g.moveTo(DOOR.x+20,DOOR.y+DOOR.h-20-i*8);for(let x=0;x<=DOOR.w-40;x+=20)g.lineTo(DOOR.x+20+x,DOOR.y+DOOR.h-20-i*8+Math.sin(x/12+now/200+i)*2);g.stroke()}
+    g.strokeStyle='rgba(200,220,230,.4)';g.lineWidth=2;g.beginPath();g.moveTo(DOOR.x+16,DOOR.y+DOOR.h*.66);g.lineTo(DOOR.x+DOOR.w-16,DOOR.y+DOOR.h*.66);g.stroke();
+    const dx=DOOR.x+DOOR.w/2,dy=DOOR.y+DOOR.h*.66-24;
+    g.fillStyle=S.door||K.state==='done'?brownCol(S.brown):'rgba(40,40,40,.85)';g.beginPath();g.ellipse(dx,dy,74,28,0,0,K.TAU);g.fill();
+    if(!S.door&&K.state!=='done'){D.text(g,'?',dx,dy,{font:'700 20px "IBM Plex Mono", monospace',col:'rgba(255,255,255,.5)'})}
+    g.restore();
+    // door panel (open = swung down)
+    if(S.door){g.save();g.fillStyle='rgba(20,48,58,.92)';g.strokeStyle=C.cyan;g.beginPath();g.moveTo(DOOR.x-6,DOOR.y+DOOR.h);g.lineTo(DOOR.x+DOOR.w+6,DOOR.y+DOOR.h);g.lineTo(DOOR.x+DOOR.w+30,DOOR.y+DOOR.h+60);g.lineTo(DOOR.x-30,DOOR.y+DOOR.h+60);g.closePath();g.fill();g.stroke();g.restore();
+      D.text(g,brownName(S.brown).toUpperCase(),dx,DOOR.y+DOOR.h+30,{font:'700 14px "IBM Plex Mono", monospace',col:brownCol(S.brown)})}
+    else D.box(g,DOOR.x,DOOR.y,DOOR.w,DOOR.h,12,{stroke:'rgba(190,250,255,.6)',lw:3});
+    D.text(g,S.door?'door OPEN · click to close':'click the door to open (D)',OV.x+OV.w/2,OV.y+OV.h-22,{font:'500 11px "IBM Plex Mono", monospace',col:S.door?C.warn:C.dim});
+    // air readout
+    D.text(g,`AIR ${Math.round(S.air)} °C`,OV.x+20,OV.y+44,{align:'left',font:'600 12px "IBM Plex Mono", monospace',col:'#FFB27A'});
+    D.text(g,`CORE ${Math.round(S.core)} °C`,OV.x+OV.w-20,OV.y+44,{align:'right',font:'700 14px "IBM Plex Mono", monospace',col:S.core>=o.core[0]&&S.core<=o.core[1]?'#B9FFDF':C.ink,glow:C.cyan});
+    // dial
+    const a0=Math.PI*.75,a1=Math.PI*2.25,A=t=>a0+(t-60)/240*(a1-a0);
+    D.ring(g,DIAL.x,DIAL.y,DIAL.r,a0,a1,'rgba(127,243,255,.2)',8);D.ring(g,DIAL.x,DIAL.y,DIAL.r,a0,A(S.set),C.accent,8,C.accent);
+    D.ring(g,DIAL.x,DIAL.y,DIAL.r,A(Math.max(60,S.air))-.03,A(Math.max(60,S.air))+.03,'#FFD9CC',14);
+    D.text(g,S.set+'°',DIAL.x,DIAL.y-4,{font:'700 24px "IBM Plex Mono", monospace'});D.text(g,'SET · wheel',DIAL.x,DIAL.y+18,{font:'500 9px "IBM Plex Mono", monospace',col:C.dim});
+    D.box(g,STARTB.x,STARTB.y,STARTB.w,STARTB.h,10,{fill:S.on?'rgba(60,196,142,.25)':'rgba(6,18,22,.8)',stroke:S.on?C.ok:C.cyan,glow:S.on?C.ok:null});D.text(g,S.on?'■ HEATING':'▶ START',STARTB.x+STARTB.w/2,STARTB.y+20,{font:'700 13px "IBM Plex Mono", monospace',col:S.on?'#B9FFDF':C.ink});
+    D.box(g,PULLB.x,PULLB.y,PULLB.w,PULLB.h,10,{fill:'rgba(255,110,74,.18)',stroke:C.accent,glow:C.accent});D.text(g,'PULL OUT',PULLB.x+PULLB.w/2,PULLB.y+16,{font:'700 13px "IBM Plex Mono", monospace',col:'#FFD9CC'});D.text(g,'space',PULLB.x+PULLB.w/2,PULLB.y+32,{font:'500 10px "IBM Plex Mono", monospace',col:C.dim});
+    D.text(g,`${Math.floor(S.clock)} min`,PULLB.x+PULLB.w/2,STARTB.y-16,{font:'500 11px "IBM Plex Mono", monospace',col:C.dim});
+    // curve
+    if(K.T.curve){D.box(g,GR.x-8,GR.y-8,GR.w+16,GR.h+26,8,{fill:'rgba(6,18,22,.85)',stroke:'rgba(127,243,255,.3)'});const Y=t=>GR.y+GR.h-Math.min(300,t)/300*GR.h,X=i=>GR.x+i/300*GR.w;
+      g.fillStyle='rgba(60,196,142,.25)';g.fillRect(GR.x,Y(o.core[1]),GR.w,Y(o.core[0])-Y(o.core[1]));
+      D.line(g,S.hist.map((h,i)=>[X(i),Y(h[0])]),'#FF9A5A',1.5);D.line(g,S.hist.map((h,i)=>[X(i),Y(h[1])]),C.cyan,2,C.cyan);
+      D.text(g,'air',GR.x,GR.y+GR.h+10,{align:'left',font:'500 10px "IBM Plex Mono", monospace',col:'#FF9A5A'});D.text(g,'core',GR.x+30,GR.y+GR.h+10,{align:'left',font:'500 10px "IBM Plex Mono", monospace',col:C.cyan})}
+    if(K.T.brownGauge)D.meter(g,OV.x+20,OV.y+OV.h+20,OV.w-40,10,S.brown,o.brown[0],o.brown[1],{min:0,max:1.2,col:brownCol(S.brown),label:'crust'});
+    K.hint(K.playing?(S.on?'D = door · space = pull out':'scroll to set °C, then START'):'')},
+  panel(K){if(!S)return{};const o=S.o,inC=S.core>=o.core[0]&&S.core<=o.core[1];return{big:`${o.core[0]}–${o.core[1]} <small>°C</small>`,sub:`crust: ${brownName((o.brown[0]+o.brown[1])/2)} · core ${Math.round(S.core)} °C`,slots:[inC?'ok':Math.abs(S.core-(o.core[0]+o.core[1])/2)<15?'warn':'']}},
+  evaluate(K){const o=S.o,cw=o.core[1]-o.core[0],dC=S.core<o.core[0]?o.core[0]-S.core:S.core>o.core[1]?S.core-o.core[1]:0,bw=o.brown[1]-o.brown[0]+.1,dB=S.brown<o.brown[0]?o.brown[0]-S.brown:S.brown>o.brown[1]?S.brown-o.brown[1]:0;
+    const sc=Math.max(0,1-dC/(cw*2.5)),sb=Math.max(0,1-dB/(bw*1.5)),door=Math.max(0,S.opens-2)*.03;let score=100*(sc*.55+sb*.45-door);if(S.brown>1)score=Math.min(score,30);
+    return{score,lines:[['Core',`${Math.round(S.core)} °C (target ${o.core[0]}–${o.core[1]})`],['Crust',`${brownName(S.brown)} (target ${brownName((o.brown[0]+o.brown[1])/2)})`],['Door openings',S.opens],['Bake time',`${Math.floor(S.clock)} min`]],
+      bars:{items:[{v:Math.round(sc*100),label:'core',cls:sc>.85?'ok':sc>.4?'warn':'bad'},{v:Math.round(sb*100),label:'crust',cls:sb>.85?'ok':sb>.4?'warn':'bad'}],max:100},
+      note:'55% core temperature, 45% crust colour. More than 2 door openings costs 3 points each. Burnt caps at 30.'}},
+});
+function toggleDoor(K){S.door=!S.door;if(S.door){S.opens++;K.sfx.whoosh()}else K.sfx.thud()}
+function pull(K){if(!K.playing)return;S.door=true;K.state='ending';K.sfx.good();setTimeout(()=>K.finish('done'),400)}
+</script>
+</body>
+</html>

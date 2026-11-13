@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Centrifuge whisk</title>
+<link rel="stylesheet" href="kit.css">
+</head>
+<body>
+<script src="specs.js"></script>
+<script src="kit.js"></script>
+<script>
+"use strict";
+/* Centrifuge whisk · WHISK
+   Hold the mouse button and circle around the drum. Your circling speed drives the drum (with inertia).
+   Keep the needle inside the rpm band until the phase fills, then the next band appears.
+   After the last phase the drum beeps: release within the window. */
+const CX=600,CY=300,R=150;
+const VARS=[
+ {id:'eggs',name:'Phase-shifted eggs',kind:'Hand whisk · 120 rpm',desc:'Slow, forgiving band.',icon:'🥚',col:'#FFF3D6',gear:1,base:120,inertia:.5},
+ {id:'meringue',name:'Helium meringue',kind:'Stand mixer · 600 rpm',desc:'Faster and lighter: it overshoots.',icon:'☁️',col:'#E8F3FF',gear:4,base:600,inertia:.35},
+ {id:'emulsion',name:'Tahini fog emulsion',kind:'Centrifuge · 3,000 rpm',desc:'Heavy drum: slow to react.',icon:'🌫️',col:'#EADFC8',gear:16,base:3000,inertia:1.1},
+ {id:'essence',name:'Vortex essence',kind:'Vortex core · 12,000 rpm',desc:'Narrow bands that jump around.',icon:'🌀',col:'#9D88FF',gear:60,base:12000,inertia:.7,narrow:.6},
+];
+let S=null;
+const rpmOf=w=>Math.abs(w)*60/(Math.PI*2);
+MG.create({
+  id:'centrifuge',name:'Centrifuge whisk',verb:'WHISK',plateLabel:'CENTRIFUGE DRUM · RPM LOCK',
+  menuTitle:'Pick a mixture',
+  intro:'Hold the mouse button and circle around the drum to spin it. Keep the needle inside the green rpm band until the phase fills. After the last phase the drum beeps: let go right away.',
+  keys:'<kbd>Hold + circle</kbd> spin',
+  variants:VARS,
+  order(v,rand,K){const n=1+Math.floor(rand()*K.T.phases),ph=[];
+    for(let i=0;i<n;i++){const c=Math.round(v.base*(.7+rand()*.8)/(v.base/20))*(v.base/20);ph.push({c,dur:2+Math.round(rand()*4)/2})}
+    return{units:n,phases:ph,title:`${n} phase${n>1?'s':''} · ${v.name}`,subtitle:ph.map(p=>`${p.c} rpm × ${p.dur}s`).join(' → '),chip:ph.map(p=>p.c).join(' → ')+' rpm',label:'Hold rpm'}},
+  start(K,o){if(S&&S.snd)S.snd.stop();S={v:o.variant,ph:o.phases.map(p=>({...p,held:0,spent:0,done:false})),i:0,w:0,mw:0,lastA:null,grip:false,ang:0,beepAt:null,release:null,snd:null,swirl:0}},
+  stop(){if(S&&S.snd){S.snd.stop();S.snd=null}},
+  down(K,x,y){S.grip=true;S.lastA=Math.atan2(y-CY,x-CX);if(!S.snd)S.snd=K.sfx.loop('sawtooth',60)},
+  up(K){S.grip=false;S.lastA=null;if(S.beepAt!=null&&S.release==null){S.release=K.elapsed-S.beepAt;K.state='ending';
+    const ok=S.release<=K.T.stopWin;ok?K.sfx.good():K.sfx.bad();setTimeout(()=>K.finish('done'),500)}},
+  move(K,x,y){if(!S.grip)return;const a=Math.atan2(y-CY,x-CX);if(S.lastA!=null){let d=a-S.lastA;if(d>Math.PI)d-=Math.PI*2;if(d<-Math.PI)d+=Math.PI*2;S.acc=(S.acc||0)+d}S.lastA=a},
+  update(K,dt){if(!S)return;const v=S.v;
+    // mouse angular speed (rad/s), smoothed
+    const inst=(S.acc||0)/Math.max(dt,1e-3);S.acc=0;S.mw+=(inst-S.mw)*(1-Math.exp(-dt/.12));if(!S.grip)S.mw*=Math.exp(-dt*8);
+    const tau=v.inertia*K.T.inertia,target=S.grip?S.mw*v.gear:0;S.w+=(target-S.w)*(1-Math.exp(-dt/(S.grip?tau:tau*2.5)));
+    S.ang+=S.w/v.gear*dt;S.swirl+=dt;
+    const rpm=rpmOf(S.w);if(S.snd)S.snd.set(Math.min(.08,rpm/v.base*.05),40+rpm/v.base*140);
+    if(!K.playing)return;
+    const p=S.ph[S.i];
+    if(p){const bw=p.c*K.T.band/100*(v.narrow||1);p.spent+=dt;const inB=Math.abs(rpm-p.c)<=bw;if(inB)p.held+=dt;
+      if(p.held>=p.dur){p.done=true;S.i++;K.sfx.good();K.burst(CX,CY,{n:30,col:'#3CC48E',spd:220,life:.6});
+        if(S.i>=S.ph.length){S.beepAt=K.elapsed;K.sfx.tone(1760,.25,.25,'square');K.toast('BEEP: release now!')}}}
+    else if(S.beepAt!=null&&S.release==null&&K.elapsed-S.beepAt>2.5){S.release=K.elapsed-S.beepAt;K.state='ending';K.sfx.bad();setTimeout(()=>K.finish('done'),300)}},
+  draw(K,g,now){if(!S)return;const{draw:D,C}=K,v=S.v,rpm=rpmOf(S.w),p=S.ph[Math.min(S.i,S.ph.length-1)],bw=p.c*K.T.band/100*(v.narrow||1);
+    // drum + swirling mixture
+    g.save();g.beginPath();g.arc(CX,CY,R,0,K.TAU);g.fillStyle='#0a1d22';g.fill();g.clip();
+    for(let i=0;i<5;i++){g.save();g.translate(CX,CY);g.rotate(S.ang*(1-i*.12)+i);g.strokeStyle=v.col;g.globalAlpha=.18+i*.06;g.lineWidth=10-i;g.beginPath();
+      for(let t=0;t<1;t+=.02){const r=t*R*.95,a=t*5;g.lineTo(Math.cos(a)*r,Math.sin(a)*r)}g.stroke();g.restore()}
+    g.restore();D.ring(g,CX,CY,R,0,K.TAU,'rgba(127,243,255,.8)',3,C.cyan);
+    // whisk blades
+    g.save();g.translate(CX,CY);g.rotate(S.ang);for(let i=0;i<4;i++){g.rotate(Math.PI/2);g.strokeStyle='rgba(220,250,255,.75)';g.lineWidth=3;g.beginPath();g.ellipse(0,-R*.42,R*.12,R*.42,0,0,K.TAU);g.stroke()}g.restore();
+    D.box(g,CX-22,CY-22,44,44,22,{fill:'#16353e',stroke:C.cyan,glow:C.cyan});
+    // rpm gauge (arc above)
+    const GR=R+40,a0=Math.PI*1.1,a1=Math.PI*1.9,mx=p.c*2,A=r=>a0+(a1-a0)*Math.min(1,r/mx);
+    D.ring(g,CX,CY,GR,a0,a1,'rgba(127,243,255,.18)',14);
+    D.ring(g,CX,CY,GR,A(p.c-bw),A(p.c+bw),'rgba(60,196,142,.85)',14,C.ok);
+    const inB=Math.abs(rpm-p.c)<=bw,na=A(rpm);g.save();g.strokeStyle=inB?C.ok:C.accent;g.shadowColor=g.strokeStyle;g.shadowBlur=12;g.lineWidth=4;g.beginPath();g.moveTo(CX+Math.cos(na)*(GR-22),CY+Math.sin(na)*(GR-22));g.lineTo(CX+Math.cos(na)*(GR+16),CY+Math.sin(na)*(GR+16));g.stroke();g.restore();
+    D.text(g,Math.round(rpm).toLocaleString('en-US')+' rpm',CX,CY+R+34,{font:'700 30px "IBM Plex Mono", monospace',col:inB?'#B9FFDF':C.ink,glow:inB?C.ok:C.cyan});
+    D.text(g,`target ${p.c.toLocaleString('en-US')} ±${Math.round(bw)}`,CX,CY+R+60,{font:'500 12px "IBM Plex Mono", monospace',col:C.dim});
+    // phase list
+    const lx=790;S.ph.forEach((q,i)=>{const y=110+i*54;D.box(g,lx-6,y-18,96,44,8,{fill:i===S.i?'rgba(63,224,255,.12)':'rgba(6,18,22,.7)',stroke:q.done?C.ok:i===S.i?C.cyan:'rgba(127,243,255,.25)'});
+      D.text(g,q.c.toLocaleString('en-US'),lx+42,y-4,{font:'700 14px "IBM Plex Mono", monospace'});
+      g.fillStyle='rgba(127,243,255,.15)';g.fillRect(lx,y+10,84,5);g.fillStyle=q.done?C.ok:C.cyan;g.fillRect(lx,y+10,84*Math.min(1,q.held/q.dur),5)});
+    if(S.beepAt!=null&&S.release==null&&Math.floor(now/150)%2){D.text(g,'RELEASE!',CX,CY-R-70,{font:'800 34px "Bricolage Grotesque", sans-serif',col:C.accent,glow:C.accent})}
+    if(!S.grip&&K.playing&&S.beepAt==null){g.save();g.setLineDash([6,8]);D.ring(g,CX,CY,R*.75,now/400,now/400+Math.PI*1.6,'rgba(255,255,255,.35)',2);g.restore()}
+    K.hint(K.playing?(S.beepAt!=null?'let go of the mouse!':'hold the button and circle around the drum'):'')},
+  panel(K){if(!S)return{};const p=S.ph[Math.min(S.i,S.ph.length-1)];return{big:p.c.toLocaleString('en-US')+' <small>rpm</small>',
+    sub:S.i>=S.ph.length?'beep! release':`phase ${S.i+1}/${S.ph.length} · ${Math.max(0,p.dur-p.held).toFixed(1)} s to hold`,slots:S.ph.map(q=>q.done?(q.held/q.spent>.7?'ok':'warn'):'')}},
+  evaluate(K){const ph=S.ph,eff=ph.map(q=>q.done?Math.min(1,q.held/Math.max(q.spent,q.dur)):Math.min(1,q.held/q.dur)*.5);
+    const phaseScore=eff.reduce((a,b)=>a+b,0)/ph.length,stop=S.release==null?0:Math.max(0,1-Math.max(0,S.release-.15)/K.T.stopWin);
+    return{score:100*(phaseScore*.8+stop*.2),
+      lines:[...ph.map((q,i)=>[`Phase ${i+1} · ${q.c} rpm`,q.done?`${Math.round(q.held/q.spent*100)}% in band`:`${Math.round(q.held/q.dur*100)}% held`]),['Release after beep',S.release==null?'—':S.release.toFixed(2)+' s']],
+      bars:{items:ph.map((q,i)=>({v:Math.round(eff[i]*100),label:'P'+(i+1),cls:eff[i]>.75?'ok':eff[i]>.45?'warn':'bad'})),max:100},
+      note:'Phase score = share of time spent inside the band. 20% of the score is the release timing.'}},
+});
+</script>
+</body>
+</html>
