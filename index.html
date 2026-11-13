@@ -69,8 +69,35 @@ ul.tight li{margin:2px 0}
 .no3d{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;color:var(--muted);font-size:13px}
 
 /* VISION */
-#v-vision{grid-template-columns:1.25fr 1fr;grid-template-rows:auto 1fr}
+#v-vision{grid-template-columns:1.45fr 1fr;grid-template-rows:auto 1fr}
 .hero{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
+.hero .sub{color:var(--accent);font-weight:500;margin:-2px 0 10px}
+/* Pitch deck viewer */
+.pitch{display:flex;flex-direction:column;gap:10px}
+.pitch-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#0A1618;border-radius:8px;overflow:hidden;cursor:zoom-in;position:relative}
+.pitch-stage img{width:100%;height:100%;object-fit:contain;display:block}
+.pitch-stage:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.pitch-bar{display:flex;align-items:center;gap:8px}
+.pitch-bar .count{font:500 12px var(--f-mono);color:var(--muted);min-width:56px;text-align:center}
+.pitch-bar .sp{flex:1}
+.pitch-dots{display:flex;gap:6px}
+.pitch-dots button{width:8px;height:8px;border-radius:50%;border:0;padding:0;background:var(--line);cursor:pointer}
+.pitch-dots button[aria-current="true"]{background:var(--accent)}
+.vside{display:grid;grid-template-rows:auto 1fr;gap:12px;min-height:0}
+.steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.steps3 .s{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel2)}
+.steps3 .k{font:500 11px var(--f-mono);color:var(--accent)}
+.steps3 p{font-size:13px;color:var(--muted);margin:4px 0 0}
+.tablink{background:none;border:0;padding:0;font:inherit;color:var(--violet);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+/* Full-screen slide view */
+.pitch-lb{position:fixed;inset:0;z-index:50;background:rgba(5,12,14,.94);display:grid;grid-template-rows:1fr auto;gap:12px;padding:20px}
+.pitch-lb[hidden]{display:none!important}
+.pitch-lb img{width:100%;height:100%;object-fit:contain;min-height:0}
+.pitch-lb .pitch-bar{justify-content:center}
+.pitch-lb .count{color:#C8D6D6}
+.pitch-lb .kbtn{background:#14262A;color:#E2EFED;border-color:#29403F}
+.pitch-lb .lbnav{position:absolute;top:50%;transform:translateY(-50%);font-size:22px;width:48px;height:64px;border-radius:10px}
+.pitch-lb .lbnav.prev{left:16px}.pitch-lb .lbnav.next{right:16px}
 .hero h2{font-size:clamp(28px,4vw,48px);line-height:1;margin:0 0 10px;font-weight:800;letter-spacing:-.03em}
 .hero h2 em{font-style:normal;color:var(--accent)}
 .facts{display:flex;gap:8px;flex-wrap:wrap}
@@ -294,6 +321,9 @@ body.resizing canvas{pointer-events:none}
   .view,#v-vision,#v-loop,#v-tech,#v-look,#v-kitchen,#v-lab{grid-template-columns:1fr;grid-template-rows:none;height:auto}
   .hero{grid-template-columns:1fr}
   .pillars{grid-template-columns:1fr}
+  .pitch-stage{flex:none;aspect-ratio:16/9}
+  .steps3{grid-template-columns:1fr}
+  .pitch-lb .lbnav{display:none}
   .panel{overflow:visible}
   nav{margin-left:0}
   .kstage{height:62vh}
@@ -336,9 +366,10 @@ body.resizing canvas{pointer-events:none}
     <div>
       <p class="eyebrow">High concept · PC &amp; web browser</p>
       <h2>Be the mad scientist of <em>futuristic cooking.</em></h2>
-      <p>Take orders, cook with lab-grade precision, and serve. Every gram, kelvin and second you get right or wrong shows up on the test subject who eats your dish: they glow, float, shrink or grow a giant head. Cooking Lab is closer to chemistry than to a kitchen, and it is always played for laughs.</p>
+      <p class="sub">A goofy precision-cooking simulator in a futuristic kitchen.</p>
+      <p>Cook food in first-person view like a mad scientist, and watch what it does to your test subjects. Every recipe is a chain of steps, each with its own gameplay. The better you cook each step, the stronger the goofy effect on the subject who eats the dish: they glow, float, change color or grow a giant head.</p>
       <div class="facts">
-        <span class="chip">Genre: precision cooking sim</span><span class="chip">Target: university students, 17–24</span><span class="chip">Session: 3–5 min per order</span><span class="chip">Tone: educational &amp; goofy</span>
+        <span class="chip">Audience: college, science-minded</span><span class="chip">Genre: educational cooking</span><span class="chip">Platform: PC &amp; web browser</span><span class="chip">View: first person</span>
       </div>
     </div>
     <div class="ticket" aria-label="Example order ticket">
@@ -350,8 +381,35 @@ body.resizing canvas{pointer-events:none}
       <div class="r muted"><span>Pan</span><span>310 K</span></div>
     </div>
   </div>
+  <div class="panel pitch" aria-roledescription="carousel" aria-label="Pitch deck">
+    <p class="eyebrow">Pitch deck · <b>click to enlarge</b> · ← → keys</p>
+    <div class="pitch-stage" id="pitchStage" role="button" tabindex="0" aria-label="Open the slide in full screen">
+      <img id="pitchImg" src="slides/01.png" alt="Pitch slide 1 of 5">
+    </div>
+    <div class="pitch-bar">
+      <button class="kbtn" id="pitchPrev" aria-label="Previous slide">← Prev</button>
+      <span class="count" id="pitchCount" aria-live="polite">1 / 5</span>
+      <button class="kbtn" id="pitchNext" aria-label="Next slide">Next →</button>
+      <div class="pitch-dots" id="pitchDots"></div>
+      <span class="sp"></span>
+      <button class="kbtn" id="pitchFull">⛶ Full screen</button>
+    </div>
+  </div>
+  <div class="vside">
   <div class="panel">
-    <p class="eyebrow">Design pillars</p>
+    <p class="eyebrow">How a recipe plays</p>
+    <div class="steps3">
+      <div class="s"><div class="k">01 · Steps</div><h3>Cook step by step</h3><p>Recipes are made of several steps, each with its own gameplay.</p></div>
+      <div class="s"><div class="k">02 · Success</div><h3>Nail each step</h3><p>Be as precise as possible within each step's time limit for a perfect score.</p></div>
+      <div class="s"><div class="k">03 · Observe</div><h3>Watch the subject</h3><p>The dish transforms the test subject, depending on your success rate.</p></div>
+    </div>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">An interactive document · <b>a tool to work with</b></p>
+    <details open><summary>Read it, then play it</summary><div><p>Mechanics and content are described here, and can also be observed and played: the <button class="tablink" data-go="look">effects visualizer</button>, the editable <button class="tablink" data-go="kitchen">kitchen layout</button>, and <button class="tablink" data-go="lab">recipes, steps and dish results</button>.</p></div></details>
+    <details><summary>Playable prototypes</summary><div><p>Every cooking station is prototyped. Select a station to test its gameplay, or select a recipe and play all of its steps.</p></div></details>
+    <details><summary>Real-time values</summary><div><p>Values edited here are connected to everything related: the kitchen layout used during recipes, station parameters in gameplay, and the gameplay descriptions you read.</p></div></details>
+    <details><summary>Design pillars</summary><div>
     <div class="pillars">
       <div class="pillar"><div class="k">Precision</div><h3>Every step is measured</h3>
         <details><summary>Weight, temperature, time, angle</summary><div><p>Each step has a real target in real units (g, mL, K, °C, rpm, mm). Precision is scored and drives the outcome.</p></div></details></div>
@@ -361,16 +419,23 @@ body.resizing canvas{pointer-events:none}
         <details><summary>Dosage → effect strength</summary><div><p>Good dosing gives the requested effect. Sloppy dosing gives side effects. Bad dosing backfires: the subject turns green or shrinks. The payoff is visual and immediate.</p></div></details></div>
       <div class="pillar"><div class="k">Immersion</div><h3>Realistic, step-by-step</h3>
         <details><summary>Slice to cut, turn to stir</summary><div><p>First-person bench with two hands. Mouse gestures copy the real motion: drag to slice, circle to stir, hold to pour, scroll to set heat.</p></div></details></div>
-    </div>
+    </div></div></details>
+    <details><summary>Player promise</summary><div><p>“I nailed 37.0 °C and the monkey's head doubled in size. Let's see what 40 does.” Curiosity first, then mastery.</p></div></details>
+    <details><summary>Learning by playing</summary><div><p>Units, conversions, Maillard reaction, emulsions and phase changes are taught through the mechanics, not through text screens.</p></div></details>
+    <details><summary>No harm to test subjects</summary><div><p>Subjects are volunteers on the lab's payroll. Effects are temporary, harmless and silly. Every subject leaves the bench happy.</p></div></details>
   </div>
-  <div class="panel">
-    <p class="eyebrow">Player promise &amp; ethics</p>
-    <details open><summary>What the player feels</summary><div><p>“I nailed 37.0 °C and the monkey's head doubled in size. Let's see what 40 does.” Curiosity first, then mastery.</p></div></details>
-    <details><summary>Learning by playing</summary><div><p>Units, conversions, Maillard reaction, emulsions and phase changes are taught through the mechanics, not through text screens. A codex fills in with the real science behind each step.</p></div></details>
-    <details><summary>No harm to test subjects</summary><div><p>Subjects are volunteers on the lab's payroll. Effects are temporary, harmless and silly. Every subject leaves the bench happy, and a backfire costs you reputation, not the subject.</p></div></details>
-    <details><summary>Progress &amp; equipment</summary><div><p>Serving earns lab credits and reputation. Credits buy and upgrade stations. Each upgrade opens new recipes and new effects. See the Kitchen 3D tab.</p></div></details>
   </div>
 </section>
+
+<div class="pitch-lb" id="pitchLb" hidden role="dialog" aria-modal="true" aria-label="Pitch deck, full screen">
+  <img id="pitchLbImg" src="slides/01.png" alt="">
+  <button class="kbtn lbnav prev" id="pitchLbPrev" aria-label="Previous slide">←</button>
+  <button class="kbtn lbnav next" id="pitchLbNext" aria-label="Next slide">→</button>
+  <div class="pitch-bar">
+    <span class="count" id="pitchLbCount">1 / 5</span>
+    <button class="kbtn" id="pitchLbClose">Close ✕ <span class="muted">Esc</span></button>
+  </div>
+</div>
 
 <!-- LOOP -->
 <section class="view" id="v-loop" hidden>
@@ -650,6 +715,53 @@ function show(v){
 }
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b){location.hash=b.dataset.v;show(b.dataset.v)}});
 window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.go;show(b.dataset.go)}));
+
+// ---------- Pitch deck viewer ----------
+(function(){
+  const SLIDES=["slides/01.png","slides/02.png","slides/03.png","slides/04.png","slides/05.png"],N=SLIDES.length;
+  let i=0,lastFocus=null;
+  SLIDES.forEach(s=>{const im=new Image();im.src=s});
+  const dots=$("#pitchDots"),lb=$("#pitchLb");
+  SLIDES.forEach((_,k)=>{const d=document.createElement("button");d.setAttribute("aria-label","Slide "+(k+1));d.addEventListener("click",()=>go(k));dots.appendChild(d)});
+  function go(k){
+    i=(k+N)%N;
+    const alt=`Pitch slide ${i+1} of ${N}`,txt=`${i+1} / ${N}`;
+    $("#pitchImg").src=$("#pitchLbImg").src=SLIDES[i];
+    $("#pitchImg").alt=$("#pitchLbImg").alt=alt;
+    $("#pitchCount").textContent=$("#pitchLbCount").textContent=txt;
+    [...dots.children].forEach((d,n)=>d.setAttribute("aria-current",n===i));
+  }
+  function open(){
+    lastFocus=document.activeElement;lb.hidden=false;$("#pitchLbClose").focus();
+    if(lb.requestFullscreen) lb.requestFullscreen().catch(()=>{});
+  }
+  function close(){
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    lb.hidden=true;if(lastFocus) lastFocus.focus();
+  }
+  document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&!lb.hidden) close()});
+  $("#pitchPrev").addEventListener("click",()=>go(i-1));
+  $("#pitchNext").addEventListener("click",()=>go(i+1));
+  $("#pitchLbPrev").addEventListener("click",()=>go(i-1));
+  $("#pitchLbNext").addEventListener("click",()=>go(i+1));
+  $("#pitchFull").addEventListener("click",open);
+  $("#pitchLbClose").addEventListener("click",close);
+  $("#pitchStage").addEventListener("click",open);
+  $("#pitchStage").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
+  lb.addEventListener("click",e=>{if(e.target===lb) close()});
+  document.addEventListener("keydown",e=>{
+    const inLb=!lb.hidden;
+    if(!inLb&&$("#v-vision").hidden) return;
+    if(e.target.closest&&e.target.closest("input,textarea,select")) return;
+    if(e.key==="ArrowRight"){e.preventDefault();go(i+1)}
+    else if(e.key==="ArrowLeft"){e.preventDefault();go(i-1)}
+    else if(inLb&&e.key==="Escape") close();
+    else if(inLb&&e.key==="Home") go(0);
+    else if(inLb&&e.key==="End") go(N-1);
+  });
+  go(0);
+})();
 renderLoop();renderPipe();
 </script>
 
