@@ -69,8 +69,35 @@ ul.tight li{margin:2px 0}
 .no3d{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;color:var(--muted);font-size:13px}
 
 /* VISION */
-#v-vision{grid-template-columns:1.25fr 1fr;grid-template-rows:auto 1fr}
+#v-vision{grid-template-columns:1.45fr 1fr;grid-template-rows:auto 1fr}
 .hero{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
+.hero .sub{color:var(--accent);font-weight:500;margin:-2px 0 10px}
+/* Pitch deck viewer */
+.pitch{display:flex;flex-direction:column;gap:10px}
+.pitch-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:#0A1618;border-radius:8px;overflow:hidden;cursor:zoom-in;position:relative}
+.pitch-stage img{width:100%;height:100%;object-fit:contain;display:block}
+.pitch-stage:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
+.pitch-bar{display:flex;align-items:center;gap:8px}
+.pitch-bar .count{font:500 12px var(--f-mono);color:var(--muted);min-width:56px;text-align:center}
+.pitch-bar .sp{flex:1}
+.pitch-dots{display:flex;gap:6px}
+.pitch-dots button{width:8px;height:8px;border-radius:50%;border:0;padding:0;background:var(--line);cursor:pointer}
+.pitch-dots button[aria-current="true"]{background:var(--accent)}
+.vside{display:grid;grid-template-rows:auto 1fr;gap:12px;min-height:0}
+.steps3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.steps3 .s{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel2)}
+.steps3 .k{font:500 11px var(--f-mono);color:var(--accent)}
+.steps3 p{font-size:13px;color:var(--muted);margin:4px 0 0}
+.tablink{background:none;border:0;padding:0;font:inherit;color:var(--violet);cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+/* Full-screen slide view */
+.pitch-lb{position:fixed;inset:0;z-index:50;background:rgba(5,12,14,.94);display:grid;grid-template-rows:1fr auto;gap:12px;padding:20px}
+.pitch-lb[hidden]{display:none!important}
+.pitch-lb img{width:100%;height:100%;object-fit:contain;min-height:0}
+.pitch-lb .pitch-bar{justify-content:center}
+.pitch-lb .count{color:#C8D6D6}
+.pitch-lb .kbtn{background:#14262A;color:#E2EFED;border-color:#29403F}
+.pitch-lb .lbnav{position:absolute;top:50%;transform:translateY(-50%);font-size:22px;width:48px;height:64px;border-radius:10px}
+.pitch-lb .lbnav.prev{left:16px}.pitch-lb .lbnav.next{right:16px}
 .hero h2{font-size:clamp(28px,4vw,48px);line-height:1;margin:0 0 10px;font-weight:800;letter-spacing:-.03em}
 .hero h2 em{font-style:normal;color:var(--accent)}
 .facts{display:flex;gap:8px;flex-wrap:wrap}
@@ -154,6 +181,44 @@ th{font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;lette
 .km-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .km-head h2{margin:0}
 .km-grid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1.15fr) minmax(0,1fr);gap:10px;min-height:0}
+/* Recipe run (play every step's minigame) */
+.rc-play{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.rplay .kplay-head{flex-wrap:wrap}
+.rp-steps{display:flex;gap:4px;flex-wrap:wrap}
+.rp-steps i{font:600 11px var(--f-mono);font-style:normal;min-width:24px;height:24px;display:grid;place-items:center;border-radius:6px;border:1px solid var(--line);color:var(--muted);background:var(--panel2)}
+.rp-steps i.cur{border-color:var(--accent);color:var(--ink);box-shadow:inset 0 -2px 0 var(--accent)}
+.rp-steps i.t0{background:var(--ok);border-color:var(--ok);color:#fff}.rp-steps i.t1{background:var(--violet);border-color:var(--violet);color:#fff}
+.rp-steps i.t2{background:var(--warn);border-color:var(--warn);color:#fff}.rp-steps i.t3{background:var(--bad);border-color:var(--bad);color:#fff}
+.rp-res{font:600 13px var(--f-mono);white-space:nowrap}
+.rp-sum{overflow:auto;padding:18px 22px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-content:start}
+.rp-sum h3{margin:0 0 6px;font-family:var(--f-display)}
+.rp-big{font:700 64px/1 var(--f-mono)}
+.rp-tab{width:100%;border-collapse:collapse;font-size:13px}
+.rp-tab td{padding:5px 6px;border-top:1px solid var(--line)}
+.rp-tab td:last-child{text-align:right;font-family:var(--f-mono)}
+.rp-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+@media (max-width:860px){.rp-sum{grid-template-columns:1fr}}
+.km-grid.mg{grid-template-columns:1fr 1fr minmax(290px,.95fr)}
+.km-mg{grid-column:3;grid-row:1/3;gap:6px}
+.km-mg[hidden]{display:none}
+.kmg-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kmg-head .kbtn{white-space:nowrap}
+.kmg-desc{font-size:12.5px;line-height:1.45;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.kmg-desc p{margin:0 0 6px}
+.kmg-desc ul{margin:0 0 6px;padding-left:16px}
+.kmg-desc li{margin:2px 0}
+.kmg-desc b{color:var(--accent);font-weight:600}
+.kmg-desc .kmg-score{border-top:1px dashed var(--line);padding-top:6px;margin:0;color:var(--muted)}
+.kmg-desc .kmg-score b{color:var(--ink)}
+.kmg-tw{display:flex;flex-direction:column}
+.kmg-row{padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}
+.kmg-row label{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.kmg-row output{font:500 12px var(--f-mono);color:var(--accent)}
+.kmg-row input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0 0}
+.kmg-row input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.kmg-row select{width:100%;margin-top:3px;font:12px var(--f-body);padding:3px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.kmg-row .h{font-size:11px;color:var(--muted);margin-top:1px}
+.kmg-row.changed label span::after{content:" •";color:var(--accent)}
 .km-cell{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel2);min-width:0;min-height:0;overflow:auto;display:flex;flex-direction:column}
 .km-iso{flex:1;min-height:120px;position:relative}
 .km-iso canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
@@ -168,6 +233,14 @@ th{font:500 11px var(--f-mono);color:var(--muted);text-transform:uppercase;lette
 .kstat{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px;margin:0}
 .kstat dt{font:11px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding-top:1px}
 .kstat dd{margin:0}
+.km-mock.playable{cursor:pointer;position:relative}
+.km-mock.playable::after{content:"▶ Play";position:absolute;right:8px;bottom:8px;background:var(--accent);color:#fff;font:600 12px var(--f-body);padding:4px 10px;border-radius:999px}
+.kplay-bg{position:fixed;inset:0;background:rgba(10,20,22,.55);z-index:49}
+.kplay{position:fixed;inset:16px;z-index:50;background:var(--panel);border:1px solid var(--ink);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.4);display:grid;grid-template-rows:auto 1fr;overflow:hidden}
+.kplay-head{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.kplay-head h2{margin:0;font-size:18px}
+.kplay-head .sp{flex:1}
+.kplay iframe{width:100%;height:100%;border:0;display:block;background:#1c1713}
 
 /* RECIPE LAB */
 #v-lab{gap:0;grid-template-columns:var(--lc1,200px) 12px minmax(0,1fr) 12px var(--lc3,480px)}
@@ -241,6 +314,9 @@ body.resizing canvas{pointer-events:none}
 
 @media (max-width:1180px){
   #v-lab{--lc1:170px;--lc3:405px}
+  .kmodal{overflow:auto}
+  .km-grid.mg{grid-template-columns:1fr 1fr;grid-template-rows:minmax(240px,1.15fr) minmax(220px,1fr) auto}
+  .km-mg{grid-column:1/3;grid-row:auto}
   .stepwrap{grid-template-columns:150px minmax(0,1fr) minmax(0,.9fr)}
 }
 @media (max-width:860px){
@@ -249,11 +325,15 @@ body.resizing canvas{pointer-events:none}
   .view,#v-vision,#v-loop,#v-tech,#v-look,#v-kitchen,#v-lab{grid-template-columns:1fr;grid-template-rows:none;height:auto}
   .hero{grid-template-columns:1fr}
   .pillars{grid-template-columns:1fr}
+  .pitch-stage{flex:none;aspect-ratio:16/9}
+  .steps3{grid-template-columns:1fr}
+  .pitch-lb .lbnav{display:none}
   .panel{overflow:visible}
   nav{margin-left:0}
   .kstage{height:62vh}
   .kmodal{position:fixed;inset:8px;z-index:20;overflow:auto}
-  .km-grid{grid-template-columns:1fr;grid-template-rows:none}
+  .km-grid,.km-grid.mg{grid-template-columns:1fr;grid-template-rows:none}
+  .km-mg{grid-column:auto;grid-row:auto}
   .km-iso{min-height:220px}
   .rlist{flex-direction:row;overflow-x:auto}
   .rbtn{min-width:170px}
@@ -292,9 +372,10 @@ body.resizing canvas{pointer-events:none}
     <div>
       <p class="eyebrow">High concept · PC &amp; web browser</p>
       <h2>Be the mad scientist of <em>futuristic cooking.</em></h2>
-      <p>Take orders, cook with lab-grade precision, and serve. Every gram, kelvin and second you get right or wrong shows up on the test subject who eats your dish: they glow, float, shrink or grow a giant head. Cooking Lab is closer to chemistry than to a kitchen, and it is always played for laughs.</p>
+      <p class="sub">A goofy precision-cooking simulator in a futuristic kitchen.</p>
+      <p>Cook food in first-person view like a mad scientist, and watch what it does to your test subjects. Every recipe is a chain of steps, each with its own gameplay. The better you cook each step, the stronger the goofy effect on the subject who eats the dish: they glow, float, change color or grow a giant head.</p>
       <div class="facts">
-        <span class="chip">Genre: precision cooking sim</span><span class="chip">Target: university students, 17–24</span><span class="chip">Session: 3–5 min per order</span><span class="chip">Tone: educational &amp; goofy</span>
+        <span class="chip">Audience: college, science-minded</span><span class="chip">Genre: educational cooking</span><span class="chip">Platform: PC &amp; web browser</span><span class="chip">View: first person</span>
       </div>
     </div>
     <div class="ticket" aria-label="Example order ticket">
@@ -306,8 +387,35 @@ body.resizing canvas{pointer-events:none}
       <div class="r muted"><span>Pan</span><span>310 K</span></div>
     </div>
   </div>
+  <div class="panel pitch" aria-roledescription="carousel" aria-label="Pitch deck">
+    <p class="eyebrow">Pitch deck · <b>click to enlarge</b> · ← → keys</p>
+    <div class="pitch-stage" id="pitchStage" role="button" tabindex="0" aria-label="Open the slide in full screen">
+      <img id="pitchImg" src="slides/01.png" alt="Pitch slide 1 of 5">
+    </div>
+    <div class="pitch-bar">
+      <button class="kbtn" id="pitchPrev" aria-label="Previous slide">← Prev</button>
+      <span class="count" id="pitchCount" aria-live="polite">1 / 5</span>
+      <button class="kbtn" id="pitchNext" aria-label="Next slide">Next →</button>
+      <div class="pitch-dots" id="pitchDots"></div>
+      <span class="sp"></span>
+      <button class="kbtn" id="pitchFull">⛶ Full screen</button>
+    </div>
+  </div>
+  <div class="vside">
   <div class="panel">
-    <p class="eyebrow">Design pillars</p>
+    <p class="eyebrow">How a recipe plays</p>
+    <div class="steps3">
+      <div class="s"><div class="k">01 · Steps</div><h3>Cook step by step</h3><p>Recipes are made of several steps, each with its own gameplay.</p></div>
+      <div class="s"><div class="k">02 · Success</div><h3>Nail each step</h3><p>Be as precise as possible within each step's time limit for a perfect score.</p></div>
+      <div class="s"><div class="k">03 · Observe</div><h3>Watch the subject</h3><p>The dish transforms the test subject, depending on your success rate.</p></div>
+    </div>
+  </div>
+  <div class="panel">
+    <p class="eyebrow">An interactive document · <b>a tool to work with</b></p>
+    <details open><summary>Read it, then play it</summary><div><p>Mechanics and content are described here, and can also be observed and played: the <button class="tablink" data-go="look">effects visualizer</button>, the editable <button class="tablink" data-go="kitchen">kitchen layout</button>, and <button class="tablink" data-go="lab">recipes, steps and dish results</button>.</p></div></details>
+    <details><summary>Playable prototypes</summary><div><p>Every cooking station is prototyped. Select a station to test its gameplay, or select a recipe and play all of its steps.</p></div></details>
+    <details><summary>Real-time values</summary><div><p>Values edited here are connected to everything related: the kitchen layout used during recipes, station parameters in gameplay, and the gameplay descriptions you read.</p></div></details>
+    <details><summary>Design pillars</summary><div>
     <div class="pillars">
       <div class="pillar"><div class="k">Precision</div><h3>Every step is measured</h3>
         <details><summary>Weight, temperature, time, angle</summary><div><p>Each step has a real target in real units (g, mL, K, °C, rpm, mm). Precision is scored and drives the outcome.</p></div></details></div>
@@ -317,16 +425,23 @@ body.resizing canvas{pointer-events:none}
         <details><summary>Dosage → effect strength</summary><div><p>Good dosing gives the requested effect. Sloppy dosing gives side effects. Bad dosing backfires: the subject turns green or shrinks. The payoff is visual and immediate.</p></div></details></div>
       <div class="pillar"><div class="k">Immersion</div><h3>Realistic, step-by-step</h3>
         <details><summary>Slice to cut, turn to stir</summary><div><p>First-person bench with two hands. Mouse gestures copy the real motion: drag to slice, circle to stir, hold to pour, scroll to set heat.</p></div></details></div>
-    </div>
+    </div></div></details>
+    <details><summary>Player promise</summary><div><p>“I nailed 37.0 °C and the monkey's head doubled in size. Let's see what 40 does.” Curiosity first, then mastery.</p></div></details>
+    <details><summary>Learning by playing</summary><div><p>Units, conversions, Maillard reaction, emulsions and phase changes are taught through the mechanics, not through text screens.</p></div></details>
+    <details><summary>No harm to test subjects</summary><div><p>Subjects are volunteers on the lab's payroll. Effects are temporary, harmless and silly. Every subject leaves the bench happy.</p></div></details>
   </div>
-  <div class="panel">
-    <p class="eyebrow">Player promise &amp; ethics</p>
-    <details open><summary>What the player feels</summary><div><p>“I nailed 37.0 °C and the monkey's head doubled in size. Let's see what 40 does.” Curiosity first, then mastery.</p></div></details>
-    <details><summary>Learning by playing</summary><div><p>Units, conversions, Maillard reaction, emulsions and phase changes are taught through the mechanics, not through text screens. A codex fills in with the real science behind each step.</p></div></details>
-    <details><summary>No harm to test subjects</summary><div><p>Subjects are volunteers on the lab's payroll. Effects are temporary, harmless and silly. Every subject leaves the bench happy, and a backfire costs you reputation, not the subject.</p></div></details>
-    <details><summary>Progress &amp; equipment</summary><div><p>Serving earns lab credits and reputation. Credits buy and upgrade stations. Each upgrade opens new recipes and new effects. See the Kitchen 3D tab.</p></div></details>
   </div>
 </section>
+
+<div class="pitch-lb" id="pitchLb" hidden role="dialog" aria-modal="true" aria-label="Pitch deck, full screen">
+  <img id="pitchLbImg" src="slides/01.png" alt="">
+  <button class="kbtn lbnav prev" id="pitchLbPrev" aria-label="Previous slide">←</button>
+  <button class="kbtn lbnav next" id="pitchLbNext" aria-label="Next slide">→</button>
+  <div class="pitch-bar">
+    <span class="count" id="pitchLbCount">1 / 5</span>
+    <button class="kbtn" id="pitchLbClose">Close ✕ <span class="muted">Esc</span></button>
+  </div>
+</div>
 
 <!-- LOOP -->
 <section class="view" id="v-loop" hidden>
@@ -446,12 +561,17 @@ body.resizing canvas{pointer-events:none}
     <div class="kmodal" id="kmodal" hidden role="dialog" aria-modal="true" aria-labelledby="kmTitle">
       <div class="km-head">
         <div><p class="eyebrow" id="kmEyebrow"></p><h2 id="kmTitle"></h2></div>
-        <button class="kbtn" id="kmClose">Close ✕</button>
+        <div style="display:flex;gap:6px"><button class="kbtn primary" id="kmPlay" hidden>▶ Play minigame</button><button class="kbtn" id="kmClose">Close ✕</button></div>
       </div>
       <div class="km-grid">
         <div class="km-cell"><p class="eyebrow">Isolated view · <b>drag to rotate</b></p><div class="km-iso" id="kmIso"><canvas id="isoCanvas"></canvas></div></div>
-        <div class="km-cell"><p class="eyebrow">In-game view</p><div class="km-mock" id="kmMock"></div></div>
+        <div class="km-cell"><p class="eyebrow" id="kmMockHead">In-game view</p><div class="km-mock" id="kmMock"></div></div>
         <div class="km-cell" id="kmDesc"></div>
+        <div class="km-cell km-mg" id="kmMg" hidden>
+          <div class="kmg-head"><p class="eyebrow" style="margin:0">Minigame prototype · <b>live settings</b></p><div style="display:flex;gap:6px"><button class="kbtn" id="kmgReset" title="Restore the default settings">Reset</button><button class="kbtn primary" id="kmgPlay">▶ Play</button></div></div>
+          <div class="kmg-desc" id="kmgDesc"></div>
+          <div class="kmg-tw" id="kmgTw"></div>
+        </div>
         <div class="km-cell">
           <p class="eyebrow">Progression · <b>drag to preview upgrades</b></p>
           <input type="range" min="1" max="4" step="1" value="1" id="kmLv" aria-label="Upgrade level">
@@ -472,6 +592,16 @@ body.resizing canvas{pointer-events:none}
     </div>
     <div class="klist" id="klist"></div>
   </aside>
+  <div class="kplay-bg" id="kplayBg" hidden></div>
+  <div class="kplay" id="kplay" hidden role="dialog" aria-modal="true" aria-labelledby="kplayTitle">
+    <div class="kplay-head">
+      <div><p class="eyebrow" style="margin:0">Station minigame · playable prototype</p><h2 id="kplayTitle">Cutting board</h2></div>
+      <div class="sp"></div>
+      <a class="kbtn" id="kplayOpen" href="minigames/cutting-board.html" target="_blank" rel="noopener">Open in new tab ↗</a>
+      <button class="kbtn" id="kplayClose">Back to kitchen ✕</button>
+    </div>
+    <iframe id="kplayFrame" title="Cutting board minigame" allow="autoplay"></iframe>
+  </div>
 </section>
 
 <!-- RECIPE LAB -->
@@ -491,6 +621,7 @@ body.resizing canvas{pointer-events:none}
         <div class="mockbox" id="mockbox"></div>
         <div class="stagebar" id="stagebar"><i></i><i></i><i></i><i></i></div>
         <div class="ctrls">
+          <button class="kbtn primary rc-play" id="rcPlay" title="Play every step's minigame; your scores set each step's performance">▶ Play recipe</button>
           <button class="kbtn primary" id="stNext">Advance ▸</button>
           <button class="kbtn" id="stReset">↺ Restart step</button>
           <button class="kbtn" id="rcAll" title="Complete every step">⏭ Finish recipe</button>
@@ -514,10 +645,25 @@ body.resizing canvas{pointer-events:none}
     <div class="score"><span class="big" id="pvScore">0%</span><span class="verdict" id="pvVerdict"></span></div>
     <ul class="efflist" id="pvEff"></ul>
   </div>
+  <div class="kplay-bg" id="rpBg" hidden></div>
+  <div class="kplay rplay" id="rplay" hidden role="dialog" aria-modal="true" aria-labelledby="rpTitle">
+    <div class="kplay-head">
+      <div><p class="eyebrow" style="margin:0" id="rpEyebrow"></p><h2 id="rpTitle"></h2></div>
+      <div class="rp-steps" id="rpSteps" aria-label="Recipe steps"></div>
+      <div class="sp"></div>
+      <span class="rp-res" id="rpRes"></span>
+      <button class="kbtn" id="rpRetry" title="Replay this step's minigame">↺ Retry step</button>
+      <button class="kbtn primary" id="rpNext" disabled>Next step ▸</button>
+      <button class="kbtn" id="rpQuit" title="Stop the run (completed steps are kept)">Quit ✕</button>
+    </div>
+    <iframe id="rpFrame" title="Recipe step minigame" allow="autoplay"></iframe>
+    <div class="rp-sum" id="rpSum" hidden></div>
+  </div>
 </section>
 </main>
 </div>
 
+<script src="minigames/specs.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 <script>
@@ -580,6 +726,53 @@ function show(v){
 }
 $("#tabs").addEventListener("click",e=>{const b=e.target.closest("[data-v]");if(b){location.hash=b.dataset.v;show(b.dataset.v)}});
 window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>{location.hash=b.dataset.go;show(b.dataset.go)}));
+
+// ---------- Pitch deck viewer ----------
+(function(){
+  const SLIDES=["slides/01.png","slides/02.png","slides/03.png","slides/04.png","slides/05.png"],N=SLIDES.length;
+  let i=0,lastFocus=null;
+  SLIDES.forEach(s=>{const im=new Image();im.src=s});
+  const dots=$("#pitchDots"),lb=$("#pitchLb");
+  SLIDES.forEach((_,k)=>{const d=document.createElement("button");d.setAttribute("aria-label","Slide "+(k+1));d.addEventListener("click",()=>go(k));dots.appendChild(d)});
+  function go(k){
+    i=(k+N)%N;
+    const alt=`Pitch slide ${i+1} of ${N}`,txt=`${i+1} / ${N}`;
+    $("#pitchImg").src=$("#pitchLbImg").src=SLIDES[i];
+    $("#pitchImg").alt=$("#pitchLbImg").alt=alt;
+    $("#pitchCount").textContent=$("#pitchLbCount").textContent=txt;
+    [...dots.children].forEach((d,n)=>d.setAttribute("aria-current",n===i));
+  }
+  function open(){
+    lastFocus=document.activeElement;lb.hidden=false;$("#pitchLbClose").focus();
+    if(lb.requestFullscreen) lb.requestFullscreen().catch(()=>{});
+  }
+  function close(){
+    if(document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+    lb.hidden=true;if(lastFocus) lastFocus.focus();
+  }
+  document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&!lb.hidden) close()});
+  $("#pitchPrev").addEventListener("click",()=>go(i-1));
+  $("#pitchNext").addEventListener("click",()=>go(i+1));
+  $("#pitchLbPrev").addEventListener("click",()=>go(i-1));
+  $("#pitchLbNext").addEventListener("click",()=>go(i+1));
+  $("#pitchFull").addEventListener("click",open);
+  $("#pitchLbClose").addEventListener("click",close);
+  $("#pitchStage").addEventListener("click",open);
+  $("#pitchStage").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}});
+  lb.addEventListener("click",e=>{if(e.target===lb) close()});
+  document.addEventListener("keydown",e=>{
+    const inLb=!lb.hidden;
+    if(!inLb&&$("#v-vision").hidden) return;
+    if(e.target.closest&&e.target.closest("input,textarea,select")) return;
+    if(e.key==="ArrowRight"){e.preventDefault();go(i+1)}
+    else if(e.key==="ArrowLeft"){e.preventDefault();go(i-1)}
+    else if(inLb&&e.key==="Escape") close();
+    else if(inLb&&e.key==="Home") go(0);
+    else if(inLb&&e.key==="End") go(N-1);
+  });
+  go(0);
+})();
 renderLoop();renderPipe();
 </script>
 
@@ -1210,9 +1403,56 @@ window.initKitchen=function(){
   canvas.addEventListener("pointermove",onMove);
   canvas.addEventListener("pointerup",onUp);
   canvas.addEventListener("pointerleave",()=>{hovered=null;$("#ktip").hidden=true;canvas.style.cursor=""});
-  C.VIEWS3D.push({active:()=>!$("#v-kitchen").hidden,render});
+  C.VIEWS3D.push({active:()=>!$("#v-kitchen").hidden&&$("#kplay").hidden,render});
   renderSide();
 };
+// Playable minigame prototypes, keyed by station id
+const PLAYABLE={
+  board:{file:"minigames/cutting-board.html",title:"Cutting board"},
+  pantry:{file:"minigames/pantry.html",title:"Ingredient pantry"},
+  oven:{file:"minigames/oven.html",title:"Oven"},
+  pan:{file:"minigames/pan.html",title:"Cooktop & pan"},
+  torch:{file:"minigames/torch.html",title:"Plasma torch"},
+  cryo:{file:"minigames/cryo.html",title:"Cryo chamber"},
+  scale:{file:"minigames/scale.html",title:"Precision scale"},
+  centrifuge:{file:"minigames/centrifuge.html",title:"Centrifuge whisk"},
+  mitosis:{file:"minigames/mitosis.html",title:"Mitosis oven"},
+  plating:{file:"minigames/plating.html",title:"Plating pass"}
+};
+function openPlay(id){
+  const g=PLAYABLE[id];if(!g)return;
+  const f=$("#kplayFrame"),src=g.file+"?embed=1";
+  if(f.dataset.src!==src){f.src=src;f.dataset.src=src}
+  $("#kplayTitle").textContent=g.title;$("#kplayOpen").href=g.file;$("#kplay").hidden=false;$("#kplayBg").hidden=false;
+  setTimeout(()=>{try{f.contentWindow.focus()}catch(e){f.focus()}},50);
+}
+function closePlay(){if($("#kplay").hidden)return;$("#kplay").hidden=true;$("#kplayBg").hidden=true;$("#kmPlay").focus()}
+$("#kmPlay").addEventListener("click",()=>modalSt&&openPlay(modalSt.def.id));
+$("#kmMock").addEventListener("click",()=>{if(modalSt&&PLAYABLE[modalSt.def.id])openPlay(modalSt.def.id)});
+$("#kplayClose").addEventListener("click",closePlay);
+$("#kplayBg").addEventListener("click",closePlay);
+// ---- Minigame settings + live description (data in minigames/specs.js, shared with the games) ----
+const SPECS=window.MG_SPECS||null;
+let mgId=null,mgT=null;
+function mgPost(){const f=$("#kplayFrame"),g=PLAYABLE[mgId];if(g&&f.dataset.src===g.file+"?embed=1"&&f.contentWindow)f.contentWindow.postMessage({type:"mg-tweaks",id:mgId,T:{...mgT}},"*")}
+function renderMgDesc(){const d=SPECS.describe(mgId,mgT);
+  $("#kmgDesc").innerHTML=`<p>${d.pitch}</p><ul>${d.play.map(l=>`<li>${l}</li>`).join("")}</ul><p class="kmg-score"><b>Scoring.</b> ${d.score}</p>`}
+function renderMg(id){const box=$("#kmMg"),ok=!!(SPECS&&SPECS.list[id]);box.hidden=!ok;box.parentElement.classList.toggle("mg",ok);if(!ok){mgId=null;return}
+  mgId=id;mgT=SPECS.load(id);const D=SPECS.defaults(id),tw=$("#kmgTw");renderMgDesc();tw.innerHTML="";
+  for(const s of SPECS.schema(id)){const r=document.createElement("div");r.className="kmg-row";const ch=()=>r.classList.toggle("changed",mgT[s.k]!==D[s.k]);
+    if(s.t==="bool"){r.innerHTML=`<label><span>${s.l}</span><input type=checkbox ${mgT[s.k]?"checked":""}></label>`;r.querySelector("input").onchange=e=>setMg(s.k,e.target.checked,ch)}
+    else if(s.t==="range"){r.innerHTML=`<label><span>${s.l}</span><output>${s.f?s.f(mgT[s.k]):mgT[s.k]}</output></label><input type=range min=${s.min} max=${s.max} step=${s.step} value=${mgT[s.k]} aria-label="${s.l}">`;
+      const o=r.querySelector("output");r.querySelector("input").oninput=e=>{setMg(s.k,+e.target.value,ch);o.textContent=s.f?s.f(mgT[s.k]):mgT[s.k]}}
+    else{r.innerHTML=`<label><span>${s.l}</span></label><select aria-label="${s.l}">${s.o.map(([v,t])=>`<option value="${v}" ${mgT[s.k]===v?"selected":""}>${t}</option>`).join("")}</select>`;r.querySelector("select").onchange=e=>setMg(s.k,e.target.value,ch)}
+    if(s.h)r.insertAdjacentHTML("beforeend",`<div class=h>${s.h}</div>`);ch();tw.appendChild(r)}}
+function setMg(k,v,ch){mgT[k]=v;SPECS.save(mgId,mgT);renderMgDesc();if(ch)ch();mgPost()}
+$("#kmgReset").addEventListener("click",()=>{if(!mgId)return;mgT=SPECS.defaults(mgId);SPECS.save(mgId,mgT);renderMg(mgId);mgPost()});
+$("#kmgPlay").addEventListener("click",()=>modalSt&&openPlay(modalSt.def.id));
+// sync with the embedded game: it asks for settings when it loads and reports its own changes
+addEventListener("message",e=>{const d=e.data;if(!d||!SPECS||!SPECS.list[d.id])return;const f=$("#kplayFrame");
+  if(d.type==="mg-ready"&&e.source===f.contentWindow)f.contentWindow.postMessage({type:"mg-tweaks",id:d.id,T:SPECS.load(d.id)},"*");
+  if(d.type==="mg-tweaks"){SPECS.save(d.id,d.T);if(d.id===mgId&&!$("#kmodal").hidden)renderMg(mgId)}});
+addEventListener("storage",e=>{if(mgId&&SPECS&&e.key===SPECS.key(mgId)&&!$("#kmodal").hidden)renderMg(mgId)});
 function syncFromStore(){
   const s=C.loadKitchen();
   stations.forEach(st=>{const p=s.layout&&s.layout[st.def.id];if(p){st.group.position.set(p[0],0,p[1]);st.group.rotation.y=p[2]}
@@ -1261,9 +1501,13 @@ function openModal(st){
   $("#kmTitle").textContent=st.def.name;
   const d=st.def;
   $("#kmDesc").innerHTML=`<p class="eyebrow">How it's used</p><p>${d.use}</p><dl class="kstat"><dt>Gestures</dt><dd>${d.how.join(" · ")}</dd><dt>Scored on</dt><dd>${d.scored}</dd></dl>`;
+  renderMg(d.id);
   if(!iso) initIso();
   $("#kmLv").value=st.level;updateLevelUI(true);
-  $("#kmClose").focus();
+  const playable=!!PLAYABLE[d.id];
+  $("#kmPlay").hidden=!playable;$("#kmMock").classList.toggle("playable",playable);
+  $("#kmMockHead").innerHTML=playable?"In-game view · <b>click to play the prototype</b>":"In-game view";
+  (playable?$("#kmPlay"):$("#kmClose")).focus();
 }
 function closeModal(){
   if($("#kmodal").hidden) return;
@@ -1286,7 +1530,8 @@ $("#kmLvls").addEventListener("click",e=>{const b=e.target.closest("[data-lv]");
 $("#kmClose").addEventListener("click",closeModal);
 document.addEventListener("keydown",e=>{
   if($("#v-kitchen").hidden) return;
-  if(e.key==="Escape") closeModal();
+  if(e.key==="Escape"){if(!$("#kplay").hidden){closePlay();return}closeModal()}
+  if(!$("#kplay").hidden) return;
   if((e.key==="r"||e.key==="R")&&editing&&selected&&!e.target.closest("input")) rotateSel();
 });
 function initIso(){
@@ -1298,7 +1543,7 @@ function initIso(){
   const cam=new T.PerspectiveCamera(34,1,.05,50);
   const ctl=new T.OrbitControls(cam,c);ctl.autoRotate=true;ctl.autoRotateSpeed=2.4;ctl.enableDamping=true;ctl.enablePan=false;
   iso={r,s,cam,ctl,model:null};C.sized(r,cam,el);
-  C.VIEWS3D.push({active:()=>!!modalSt&&!$("#v-kitchen").hidden,render:dt=>{iso.s.traverse(C.spin(dt));iso.ctl.update();iso.r.render(iso.s,iso.cam)}});
+  C.VIEWS3D.push({active:()=>!!modalSt&&!$("#v-kitchen").hidden&&$("#kplay").hidden,render:dt=>{iso.s.traverse(C.spin(dt));iso.ctl.update();iso.r.render(iso.s,iso.cam)}});
 }
 function setIso(def,lv,reset){
   if(iso.model){iso.s.remove(iso.model);C.disposeTree(iso.model,false)}
@@ -1684,6 +1929,62 @@ function initLab(){
   if(!C.HAS3D){["#lkStage","#pvStage"].forEach(s=>$(s).insertAdjacentHTML("beforeend",'<div class="no3d">The 3D view could not load. Check your connection and reload the page.</div>'));renderAll(false);return}
   initKitchen3D();initPreview();applyDim();renderAll(true);
 }
+// ----- Play recipe: run every step's minigame; each score sets that step's performance tier -----
+const SPECS=window.MG_SPECS;
+const tierOf=sc=>sc>=85?0:sc>=65?1:sc>=40?2:3;
+let RUN=null;
+function startRun(){
+  if(!SPECS){alert("The minigames could not load (minigames/specs.js).");return}
+  const s=state(cur);s.stages=s.stages.map(()=>0);s.tiers=s.tiers.map(()=>0);s.cur=0;animP=null;
+  RUN={r:cur,i:0,res:cur.steps.map(()=>null)};renderAll(false);
+  $("#rplay").hidden=false;$("#rpBg").hidden=false;$("#rpSum").hidden=true;$("#rpFrame").hidden=false;runStep();
+}
+function runStep(){
+  const r=RUN.r,i=RUN.i,st=r.steps[i],sp=SPECS.list[st[0]],s=state(r);
+  const ing=st[1]>=0?r.ing[st[1]][0]:"",label=`Step ${i+1}/${r.steps.length} · ${st[2]} ${stepName(r,st)} · target ${st[3]}`;
+  s.cur=i;s.stages[i]=0;RUN.res[i]=null;renderAll(false);focusStation();
+  $("#rpEyebrow").textContent=`${r.name} · step ${i+1} of ${r.steps.length} · ${C.DEF[st[0]].name}`;
+  $("#rpTitle").textContent=`${st[2]} ${stepName(r,st)}`;
+  $("#rpRes").textContent="playing…";$("#rpRes").style.color="var(--muted)";
+  $("#rpNext").disabled=true;$("#rpNext").textContent=i<r.steps.length-1?"Next step ▸":"See the result ▸";
+  renderRunSteps();
+  $("#rpFrame").src=`${sp.file}?embed=1&run=1&ing=${encodeURIComponent(ing)}&label=${encodeURIComponent(label)}&t=${Date.now()}`;
+  setTimeout(()=>{try{$("#rpFrame").contentWindow.focus()}catch(e){}},300);
+}
+function renderRunSteps(){
+  $("#rpSteps").innerHTML=RUN.r.steps.map((st,k)=>{const x=RUN.res[k];return`<i class="${k===RUN.i&&$("#rpSum").hidden?"cur":""} ${x?"t"+x.tier:""}" title="${C.esc(st[2]+" "+stepName(RUN.r,st))}${x?` · ${x.score} (${C.TIERS[x.tier].n})`:""}">${k+1}</i>`}).join("");
+}
+function onRunResult(d){
+  const i=RUN.i,s=state(RUN.r),tier=tierOf(d.score);
+  RUN.res[i]={score:d.score,tier,variant:d.variant};s.tiers[i]=tier;s.stages[i]=4;renderAll(false);renderRunSteps();
+  const k=C.TIERS[tier];$("#rpRes").innerHTML=`${d.score}/100 → <span class="tier-${k.k}">${k.n}</span>`;$("#rpRes").style.color="";
+  $("#rpNext").disabled=false;$("#rpNext").focus();
+}
+function runSummary(){
+  const r=RUN.r,s=state(r);$("#rpFrame").src="about:blank";$("#rpFrame").hidden=true;
+  const o=renderOutcome(),k=o.score>=80?"p":o.score>=60?"g":o.score>=40?"u":"b";
+  $("#rpEyebrow").textContent=`${r.name} · run complete`;$("#rpTitle").textContent=`Served to ${r.nick}`;$("#rpRes").textContent="";
+  $("#rpNext").hidden=true;$("#rpRetry").hidden=true;
+  $("#rpSum").innerHTML=`<div><p class="eyebrow">Dish score</p><div class="rp-big tier-${k}">${o.score}%</div><p>${C.esc($("#pvVerdict").textContent)}</p>
+    <h3>Effects on ${C.esc(r.nick)}</h3><ul class="efflist">${o.lines.map(l=>`<li><span class="d" style="background:${l.c}"></span><span>${C.esc(l.t)}</span></li>`).join("")}</ul>
+    <div class="rp-btns"><button class="kbtn primary" data-go="subject">See it on ${C.esc(r.nick)} ▸</button><button class="kbtn" data-go="dish">See the dish</button><button class="kbtn" data-go="again">↺ Play again</button></div></div>
+    <div><p class="eyebrow">Your steps</p><table class="rp-tab">${r.steps.map((st,j)=>{const x=RUN.res[j],t=x?C.TIERS[x.tier]:null;
+      return`<tr><td>${j+1}</td><td><b>${C.esc(st[2])} ${C.esc(stepName(r,st))}</b><br><span class="muted" style="font-size:11.5px">${C.DEF[st[0]].name}${x&&x.variant?` · ${C.esc(x.variant)}`:""}</span></td><td>${x?`${x.score} · <span class="tier-${t.k}">${t.n}</span>`:"skipped"}</td></tr>`}).join("")}</table>
+    <p class="muted" style="font-size:12px">Score → performance: 85+ Perfect · 65+ Good · 40+ Unstable · below 40 Backfire.</p></div>`;
+  $("#rpSum").hidden=false;renderRunSteps();
+}
+function endRun(view){
+  $("#rplay").hidden=true;$("#rpBg").hidden=true;$("#rpFrame").src="about:blank";$("#rpRetry").hidden=$("#rpNext").hidden=false;RUN=null;renderAll(false);
+  if(view){const b=document.querySelector(`#pvSeg [data-pv="${view}"]`);if(b)b.click()}
+}
+$("#rcPlay").addEventListener("click",startRun);
+$("#rpNext").addEventListener("click",()=>{if(!RUN)return;if(RUN.i<RUN.r.steps.length-1){RUN.i++;runStep()}else runSummary()});
+$("#rpRetry").addEventListener("click",()=>{if(RUN&&$("#rpSum").hidden)runStep()});
+$("#rpQuit").addEventListener("click",()=>{if(RUN)endRun(null)});
+$("#rpSum").addEventListener("click",e=>{const b=e.target.closest("[data-go]");if(!b)return;if(b.dataset.go==="again"){$("#rpRetry").hidden=$("#rpNext").hidden=false;startRun()}else endRun(b.dataset.go)});
+addEventListener("message",e=>{const d=e.data,f=$("#rpFrame");if(!RUN||!d||e.source!==f.contentWindow)return;
+  if(d.type==="mg-result")onRunResult(d);
+  if(d.type==="mg-ready"&&SPECS&&SPECS.list[d.id])f.contentWindow.postMessage({type:"mg-tweaks",id:d.id,T:SPECS.load(d.id)},"*")});
 window.onShowView=function(v){
   if(v==="kitchen"&&window.initKitchen) window.initKitchen();
   if(v==="look"&&window.initLook) window.initLook();
